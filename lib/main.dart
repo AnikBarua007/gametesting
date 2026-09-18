@@ -77,16 +77,20 @@ class _GameHomeState extends State<GameHome> {
               padding: const EdgeInsets.fromLTRB(13, 12, 13, 100),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
                 if (!_searching) ...<Widget>[
-                  GamePreviewBanner(game: _selectedGame),
+                  GamePreviewBanner(
+                    game: _selectedGame,
+                    onQuickJoin: () => _launchGame(_selectedGame ?? _games.first),
+                  ),
                   const SizedBox(height: 22),
                   const Text('Dive into the Action', style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 15),
                 ] else
-                  Padding(padding: const EdgeInsets.only(bottom: 16), child: Text('Games matching: ' + _searchController.text, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700))),
+                  Padding(padding: const EdgeInsets.only(bottom: 16), child: Text('Games matching: ${_searchController.text}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700))),
                 FutureBuilder<Map<String, int>>(
                   future: _activePlayers,
+                  initialData: const <String, int>{},
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) return const Center(child: Padding(padding: EdgeInsets.all(36), child: CircularProgressIndicator()));
+                    final Map<String, int> players = snapshot.data ?? const <String, int>{};
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -94,7 +98,7 @@ class _GameHomeState extends State<GameHome> {
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 18, crossAxisSpacing: 16, childAspectRatio: 1.46),
                       itemBuilder: (_, index) {
                         final Game game = shownGames[index];
-                        return GameCard(game: game, activePlayers: snapshot.data![game.id] ?? 0, selected: game.id == _selectedGame?.id, onTap: () => _selectGame(game));
+                        return GameCard(game: game, activePlayers: players[game.id] ?? 0, selected: game.id == _selectedGame?.id, onTap: () => _selectGame(game));
                       },
                     );
                   },
@@ -186,8 +190,9 @@ class _GameHomeState extends State<GameHome> {
 }
 
 class GamePreviewBanner extends StatefulWidget {
-  const GamePreviewBanner({super.key, required this.game});
+  const GamePreviewBanner({super.key, required this.game, this.onQuickJoin});
   final Game? game;
+  final VoidCallback? onQuickJoin;
   @override
   State<GamePreviewBanner> createState() => _GamePreviewBannerState();
 }
@@ -205,6 +210,33 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
         Positioned(right: 5, top: 3, child: Icon(game?.icon ?? Icons.sports_esports_rounded, size: 120, color: Colors.white24)),
         Text(game?.name ?? 'Bored?\nNot for long.', style: const TextStyle(fontSize: 26, height: .95, color: Colors.white, fontWeight: FontWeight.w900)),
         Positioned(top: 61, left: 0, right: 85, child: Text(game?.description ?? 'Jump into a 5-minute match\nright now!', style: const TextStyle(color: Color(0xffe6dff4), fontSize: 12))),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onQuickJoin,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xffefc249),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'QUICK JOIN NOW',
+                  style: TextStyle(
+                    color: Color(0xff1c1d2a),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ]),
     );
   }
@@ -251,7 +283,7 @@ class _GameLaunchBarState extends State<GameLaunchBar> {
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: widget.game.accent, width: 1.3),
                 boxShadow: <BoxShadow>[
-                  BoxShadow(color: widget.game.accent.withOpacity(.35), blurRadius: 18, spreadRadius: 1),
+                  BoxShadow(color: widget.game.accent.withValues(alpha: .35), blurRadius: 18, spreadRadius: 1),
                 ],
               ),
               child: Row(
@@ -288,8 +320,8 @@ class _GameCardState extends State<GameCard> {
         child: Ink(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(13), gradient: LinearGradient(colors: <Color>[widget.game.a, widget.game.b]), border: Border.all(color: widget.selected ? Colors.white : widget.game.accent, width: widget.selected ? 2.5 : 1.5)),
           child: Stack(children: <Widget>[
-            Positioned(right: 8, bottom: 12, child: Icon(widget.game.icon, size: 53, color: widget.game.accent.withOpacity(.85))),
-            Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[Text(widget.game.name, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: .92)), const Spacer(), Text(widget.activePlayers.toString() + ' active', style: const TextStyle(color: Color(0xffe6e5eb), fontSize: 12))])),
+            Positioned(right: 8, bottom: 12, child: Icon(widget.game.icon, size: 53, color: widget.game.accent.withValues(alpha: .85))),
+            Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[Text(widget.game.name, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: .92)), const Spacer(), Text('${widget.activePlayers} active', style: const TextStyle(color: Color(0xffe6e5eb), fontSize: 12))])),
           ]),
         ),
       );
@@ -304,7 +336,7 @@ class InboxScreen extends StatefulWidget {
 class _InboxScreenState extends State<InboxScreen> {
   final List<String> _messages = <String>['Maya invited you to Sketch Party.', 'Your Casefile match is ready.', 'Sam reacted to your Hidden Hand win.'];
   @override
-  Widget build(BuildContext context) => Scaffold(backgroundColor: const Color(0xff1c1d2a), appBar: AppBar(title: const Text('Inbox'), backgroundColor: const Color(0xff1c1d2a), foregroundColor: Colors.white), body: ListView.separated(padding: const EdgeInsets.all(16), itemCount: _messages.length, separatorBuilder: (_, __) => const Divider(color: Color(0xff3c3d4b)), itemBuilder: (_, index) => ListTile(leading: const CircleAvatar(backgroundColor: Color(0xff7062b5), child: Icon(Icons.person, color: Colors.white)), title: Text(_messages[index], style: const TextStyle(color: Colors.white)), subtitle: const Text('Just now', style: TextStyle(color: Colors.white54)))));
+  Widget build(BuildContext context) => Scaffold(backgroundColor: const Color(0xff1c1d2a), appBar: AppBar(title: const Text('Inbox'), backgroundColor: const Color(0xff1c1d2a), foregroundColor: Colors.white), body: ListView.separated(padding: const EdgeInsets.all(16), itemCount: _messages.length, separatorBuilder: (_, _) => const Divider(color: Color(0xff3c3d4b)), itemBuilder: (_, index) => ListTile(leading: const CircleAvatar(backgroundColor: Color(0xff7062b5), child: Icon(Icons.person, color: Colors.white)), title: Text(_messages[index], style: const TextStyle(color: Colors.white)), subtitle: const Text('Just now', style: TextStyle(color: Colors.white54)))));
 }
 
 class GameLaunchScreen extends StatefulWidget {
@@ -322,7 +354,7 @@ class _GameLaunchScreenState extends State<GameLaunchScreen> {
     Future<void>.delayed(const Duration(seconds: 1), () { if (mounted) setState(() => _launching = false); });
   }
   @override
-  Widget build(BuildContext context) => Scaffold(backgroundColor: widget.game.a, appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white), body: Center(child: _launching ? const CircularProgressIndicator(color: Colors.white) : Column(mainAxisSize: MainAxisSize.min, children: <Widget>[Icon(widget.game.icon, color: widget.game.accent, size: 90), const SizedBox(height: 18), Text(widget.game.name.replaceAll('\n', ' ') + ' is ready!', style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('Your game session has started.', style: TextStyle(color: Colors.white70))])));
+  Widget build(BuildContext context) => Scaffold(backgroundColor: widget.game.a, appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white), body: Center(child: _launching ? const CircularProgressIndicator(color: Colors.white) : Column(mainAxisSize: MainAxisSize.min, children: <Widget>[Icon(widget.game.icon, color: widget.game.accent, size: 90), const SizedBox(height: 18), Text('${widget.game.name.replaceAll('\n', ' ')} is ready!', style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('Your game session has started.', style: TextStyle(color: Colors.white70))])));
 }
 
 class Game {
