@@ -5,8 +5,10 @@ import 'firebase_options.dart';
 import 'core/models/user_profile.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/profile_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'features/auth/widgets/auth_gate.dart';
 import 'features/games/hidden_hand/screens/hidden_hand_screen.dart';
+import 'features/games/hidden_hand/widgets/thematic_components.dart';
 import 'features/profile/screens/profile_screen.dart';
 
 void main() async {
@@ -58,7 +60,7 @@ class _GameHomeState extends State<GameHome> {
   int _selectedTab = 0;
 
   final List<Game> _games = const <Game>[
-    Game('hidden-hand', 'HIDDEN\nHAND', 'Blend in, find your team, and win.', Icons.front_hand_rounded, Color(0xff37235d), Color(0xff81438f), Color(0xffefc249)),
+    Game('hidden-hand', 'HIDDEN\nHAND', 'Draw your part. Unmask the fake artist.', Icons.front_hand_rounded, Color(0xff37235d), Color(0xff81438f), Color(0xffefc249)),
     Game('casefile', 'CASEFILE', 'Solve a fast-moving case with friends.', Icons.manage_search_rounded, Color(0xff1e345d), Color(0xff9b6031), Color(0xff4178d7)),
     Game('sketch-party', 'SKETCH\nPARTY', 'Draw, guess, and race the clock.', Icons.gesture_rounded, Color(0xff08abc4), Color(0xff2176c7), Color(0xfff4d935)),
     Game('georush', 'GEORUSH', 'Explore the world before time runs out.', Icons.public_rounded, Color(0xff08705c), Color(0xff0c3e46), Color(0xffe4be55)),
@@ -330,43 +332,236 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
   @override
   Widget build(BuildContext context) {
     final Game? game = widget.game;
+    final bool isHiddenHand = game?.id == 'hidden-hand';
+
     return Container(
-      height: 177,
+      height: 188,
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), gradient: LinearGradient(colors: game == null ? const <Color>[Color(0xff24184e), Color(0xff522093), Color(0xff177eca)] : <Color>[game.a, game.b], begin: Alignment.topLeft, end: Alignment.bottomRight)),
-      child: Stack(children: <Widget>[
-        Positioned(right: 5, top: 3, child: Icon(game?.icon ?? Icons.sports_esports_rounded, size: 120, color: Colors.white24)),
-        Text(game?.name ?? 'Bored?\nNot for long.', style: const TextStyle(fontSize: 26, height: .95, color: Colors.white, fontWeight: FontWeight.w900)),
-        Positioned(top: 61, left: 0, right: 85, child: Text(game?.description ?? 'Jump into a 5-minute match\nright now!', style: const TextStyle(color: Color(0xffe6dff4), fontSize: 12))),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: widget.onQuickJoin,
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xffefc249),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'QUICK JOIN NOW',
-                  style: TextStyle(
-                    color: Color(0xff1c1d2a),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.4,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isHiddenHand
+              ? HiddenHandTheme.gold.withValues(alpha: 0.8)
+              : (game?.accent ?? const Color(0xff81438f)).withValues(alpha: 0.6),
+          width: isHiddenHand ? 1.8 : 1.2,
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: isHiddenHand
+                ? HiddenHandTheme.gold.withValues(alpha: 0.25)
+                : Colors.black.withValues(alpha: 0.35),
+            blurRadius: 18,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(17),
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            // Background Layer
+            if (isHiddenHand) ...<Widget>[
+              // Rich Royal Purple / Amethyst Base Gradient
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      Color(0xff241344),
+                      Color(0xff451a66),
+                      Color(0xff612275),
+                      Color(0xff2b1348),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
               ),
+              // Thematic Detective Study Texture (Semi-transparent overlay aligned to top lamp)
+              Opacity(
+                opacity: 0.30,
+                child: Image.asset(
+                  'assets/images/games/hidden_hand_bg.jpg',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+              // Warm Candlelight / Desk Lamp Radial Glow on the Right
+              Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.85, -0.45),
+                    radius: 1.1,
+                    colors: <Color>[
+                      HiddenHandTheme.gold.withValues(alpha: 0.36),
+                      HiddenHandTheme.gold.withValues(alpha: 0.10),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+              // High-res Custom Illustrated Artwork on the Right
+              Positioned(
+                right: -2,
+                top: 8,
+                bottom: 8,
+                child: Image.asset(
+                  'assets/images/games/hh_bg.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => Icon(
+                    Icons.front_hand_rounded,
+                    size: 110,
+                    color: HiddenHandTheme.gold.withValues(alpha: 0.22),
+                  ),
+                ),
+              ),
+            ] else ...<Widget>[
+              // Generic Gradient for Other Games
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: game == null
+                        ? const <Color>[Color(0xff24184e), Color(0xff522093), Color(0xff177eca)]
+                        : <Color>[game.a, game.b],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 5,
+                top: 3,
+                child: Icon(
+                  game?.icon ?? Icons.sports_esports_rounded,
+                  size: 120,
+                  color: Colors.white24,
+                ),
+              ),
+            ],
+
+            // Content Foreground
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (isHiddenHand) ...<Widget>[
+                    Image.asset(
+                      'assets/images/games/hidden_hand_logo.png',
+                      height: 26,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => Text(
+                        'HIDDEN HAND',
+                        style: GoogleFonts.cinzelDecorative(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xff121528).withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: HiddenHandTheme.gold.withValues(alpha: 0.6),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const Icon(Icons.auto_awesome_rounded, size: 10, color: HiddenHandTheme.gold),
+                          const SizedBox(width: 4),
+                          Text(
+                            'FEATURED',
+                            style: GoogleFonts.cinzel(
+                              color: HiddenHandTheme.gold,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else
+                    Text(
+                      game?.name ?? 'Bored?\nNot for long.',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        height: .95,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Container(
+                    constraints: BoxConstraints(maxWidth: isHiddenHand ? 165 : 240),
+                    child: Text(
+                      game?.description ??
+                          (isHiddenHand
+                              ? 'Draw your part. Unmask the fake artist.'
+                              : 'Jump into a 5-minute match\nright now!'),
+                      style: const TextStyle(
+                        color: Color(0xfff1f5f9),
+                        fontSize: 12,
+                        height: 1.25,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  // Bottom Action: CTA Button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.onQuickJoin,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: <Color>[Color(0xffefc249), Color(0xffd9a527)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: const Color(0xffefc249).withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const <Widget>[
+                            Icon(Icons.play_arrow_rounded, size: 16, color: Color(0xff1c1d2a)),
+                            SizedBox(width: 4),
+                            Text(
+                              'QUICK JOIN NOW',
+                              style: TextStyle(
+                                color: Color(0xff1c1d2a),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
-      ]),
+      ),
     );
   }
 }
@@ -443,17 +638,164 @@ class GameCard extends StatefulWidget {
 
 class _GameCardState extends State<GameCard> {
   @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(13),
-        child: Ink(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(13), gradient: LinearGradient(colors: <Color>[widget.game.a, widget.game.b]), border: Border.all(color: widget.selected ? Colors.white : widget.game.accent, width: widget.selected ? 2.5 : 1.5)),
-          child: Stack(children: <Widget>[
-            Positioned(right: 8, bottom: 12, child: Icon(widget.game.icon, size: 53, color: widget.game.accent.withValues(alpha: .85))),
-            Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[Text(widget.game.name, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: .92)), const Spacer(), Text('${widget.activePlayers} active', style: const TextStyle(color: Color(0xffe6e5eb), fontSize: 12))])),
-          ]),
+  Widget build(BuildContext context) {
+    final bool isHiddenHand = widget.game.id == 'hidden-hand';
+
+    return InkWell(
+      onTap: widget.onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: widget.selected
+                ? (isHiddenHand ? HiddenHandTheme.gold : Colors.white)
+                : (isHiddenHand ? HiddenHandTheme.gold.withValues(alpha: 0.6) : widget.game.accent),
+            width: widget.selected ? 2.4 : 1.4,
+          ),
+          boxShadow: widget.selected
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: (isHiddenHand ? HiddenHandTheme.gold : widget.game.accent).withValues(alpha: 0.38),
+                    blurRadius: 14,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
         ),
-      );
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              // Background
+              if (isHiddenHand) ...<Widget>[
+                // Rich Royal Purple to Deep Amethyst Gradient
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Color(0xff2d174d),
+                        Color(0xff4a1b66),
+                        Color(0xff6e2a7a),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+                // Subtle study texture overlay
+                Opacity(
+                  opacity: 0.24,
+                  child: Image.asset(
+                    'assets/images/games/hidden_hand_bg.jpg',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+                // Warm ambient glow in the top-right
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0.9, -0.6),
+                      radius: 0.8,
+                      colors: <Color>[
+                        HiddenHandTheme.gold.withValues(alpha: 0.28),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+                // Custom Illustrated Artwork (Easel & Drawing Hand)
+                Positioned(
+                  right: -4,
+                  bottom: -2,
+                  child: Image.asset(
+                    'assets/images/games/hh_bg.png',
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => Icon(
+                      Icons.front_hand_rounded,
+                      size: 53,
+                      color: HiddenHandTheme.gold.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ),
+              ] else ...<Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: <Color>[widget.game.a, widget.game.b],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 8,
+                  bottom: 12,
+                  child: Icon(
+                    widget.game.icon,
+                    size: 53,
+                    color: widget.game.accent.withValues(alpha: .85),
+                  ),
+                ),
+              ],
+
+              // Card Text Content
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      widget.game.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
+                        height: .92,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: <Widget>[
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xff10b981),
+                            boxShadow: <BoxShadow>[
+                              BoxShadow(
+                                color: const Color(0xff10b981).withValues(alpha: 0.7),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${widget.activePlayers} active',
+                          style: const TextStyle(
+                            color: Color(0xffe6e5eb),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class InboxScreen extends StatefulWidget {
