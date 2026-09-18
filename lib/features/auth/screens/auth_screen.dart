@@ -233,7 +233,7 @@ class _AuthScreenState extends State<AuthScreen>
 
                 // Tab Views
                 SizedBox(
-                  height: 230,
+                  height: 260,
                   child: TabBarView(
                     controller: _tabController,
                     children: <Widget>[
@@ -304,61 +304,67 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   Widget _buildLoginForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _buildTextField(
-          controller: _loginEmailController,
-          hint: 'Email address',
-          icon: Icons.email_outlined,
-          keyboardType: TextInputType.emailAddress,
-        ),
-        const SizedBox(height: 12),
-        _buildTextField(
-          controller: _loginPasswordController,
-          hint: 'Password',
-          icon: Icons.lock_outline_rounded,
-          obscureText: true,
-        ),
-        const SizedBox(height: 18),
-        _buildActionButton(
-          label: 'LOG IN',
-          onPressed: _handleLogin,
-        ),
-      ],
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _buildTextField(
+            controller: _loginEmailController,
+            hint: 'Email address',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            controller: _loginPasswordController,
+            hint: 'Password',
+            icon: Icons.lock_outline_rounded,
+            obscureText: true,
+          ),
+          const SizedBox(height: 18),
+          _buildActionButton(
+            label: 'LOG IN',
+            onPressed: _handleLogin,
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildRegisterForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _buildTextField(
-          controller: _regEmailController,
-          hint: 'Email address',
-          icon: Icons.email_outlined,
-          keyboardType: TextInputType.emailAddress,
-        ),
-        const SizedBox(height: 10),
-        _buildTextField(
-          controller: _regPasswordController,
-          hint: 'Create password',
-          icon: Icons.lock_outline_rounded,
-          obscureText: true,
-        ),
-        const SizedBox(height: 10),
-        _buildTextField(
-          controller: _regConfirmPasswordController,
-          hint: 'Confirm password',
-          icon: Icons.lock_outline_rounded,
-          obscureText: true,
-        ),
-        const SizedBox(height: 14),
-        _buildActionButton(
-          label: 'CREATE ACCOUNT',
-          onPressed: _handleRegister,
-        ),
-      ],
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _buildTextField(
+            controller: _regEmailController,
+            hint: 'Email address',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 10),
+          _buildTextField(
+            controller: _regPasswordController,
+            hint: 'Create password',
+            icon: Icons.lock_outline_rounded,
+            obscureText: true,
+          ),
+          const SizedBox(height: 10),
+          _buildTextField(
+            controller: _regConfirmPasswordController,
+            hint: 'Confirm password',
+            icon: Icons.lock_outline_rounded,
+            obscureText: true,
+          ),
+          const SizedBox(height: 14),
+          _buildActionButton(
+            label: 'CREATE ACCOUNT',
+            onPressed: _handleRegister,
+          ),
+        ],
+      ),
     );
   }
 
@@ -386,7 +392,7 @@ class _AuthScreenState extends State<AuthScreen>
           hintStyle: const TextStyle(color: Color(0xff717082), fontSize: 14),
           border: InputBorder.none,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
       ),
     );
