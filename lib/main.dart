@@ -6,6 +6,7 @@ import 'core/models/user_profile.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/profile_service.dart';
 import 'features/auth/widgets/auth_gate.dart';
+import 'features/games/hidden_hand/screens/hidden_hand_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 
 void main() async {
@@ -84,7 +85,15 @@ class _GameHomeState extends State<GameHome> {
       });
 
   void _launchGame(Game game) {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GameLaunchScreen(game: game)));
+    if (game.id == 'hidden-hand') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const HiddenHandScreen()),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => GameLaunchScreen(game: game)),
+    );
   }
 
   @override

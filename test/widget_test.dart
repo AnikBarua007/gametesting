@@ -37,9 +37,9 @@ void main() {
     // Tap Launch Game
     await tester.tap(find.text('LAUNCH GAME'));
     await tester.pump();
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
 
-    expect(find.text('HIDDEN HAND is ready!'), findsOneWidget);
+    expect(find.text('START ROUND'), findsOneWidget);
   });
 
   testWidgets('quick join launches game directly', (tester) async {
@@ -48,9 +48,9 @@ void main() {
 
     await tester.tap(find.text('QUICK JOIN NOW'));
     await tester.pump();
-    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
 
-    expect(find.text('HIDDEN HAND is ready!'), findsOneWidget);
+    expect(find.text('START ROUND'), findsOneWidget);
   });
 
   testWidgets('navigating to inbox screen displays notifications', (tester) async {
