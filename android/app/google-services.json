@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "271409069457",
+    "project_id": "borekill-demo",
+    "storage_bucket": "borekill-demo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:271409069457:android:08b9c3c7263d41c4ebee30",
+        "android_client_info": {
+          "package_name": "com.example.design"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "271409069457-h8v9b5chr6mekbehgi3hf7kirejppfpk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgll71XkwFm3oHC2-JGCSC7kuL3Sj20wc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "271409069457-h8v9b5chr6mekbehgi3hf7kirejppfpk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

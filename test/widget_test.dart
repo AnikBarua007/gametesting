@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:design/core/services/auth_service.dart';
+import 'package:design/core/services/profile_service.dart';
 import 'package:design/main.dart';
 
 void main() {
+  setUp(() {
+    AuthService.instance = MockAuthService(
+      initialUser: const AuthUser(
+        uid: 'user_playpal_001',
+        email: 'player@playpal.com',
+      ),
+    );
+    ProfileService.instance = MockProfileService();
+  });
   testWidgets('game home shows discovery content', (tester) async {
     await tester.pumpWidget(const PlayPalApp());
-    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(seconds: 1));
 
     expect(find.text('Dive into the Action'), findsOneWidget);
     expect(find.text('HIDDEN\nHAND'), findsOneWidget);
@@ -44,7 +55,7 @@ void main() {
 
   testWidgets('navigating to inbox screen displays notifications', (tester) async {
     await tester.pumpWidget(const PlayPalApp());
-    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(seconds: 1));
 
     await tester.tap(find.byIcon(Icons.mail_outline_rounded));
     await tester.pumpAndSettle();

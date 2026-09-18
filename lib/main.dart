@@ -1,7 +1,31 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'core/models/user_profile.dart';
+import 'core/services/auth_service.dart';
+import 'core/services/profile_service.dart';
+import 'features/auth/widgets/auth_gate.dart';
+import 'features/profile/screens/profile_screen.dart';
 
-void main() => runApp(const PlayPalApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    AuthService.instance = FirebaseAuthService();
+    ProfileService.instance = FirestoreProfileService();
+    debugPrint('=============================================');
+    debugPrint('[PlayPal] FIREBASE CONNECTED SUCCESSFULLY!');
+    debugPrint('=============================================');
+  } catch (e) {
+    debugPrint('=============================================');
+    debugPrint('[PlayPal] WARNING: Firebase init failed ($e). Using in-memory fallback.');
+    debugPrint('=============================================');
+  }
+  runApp(const PlayPalApp());
+}
 
 class PlayPalApp extends StatefulWidget {
   const PlayPalApp({super.key});
@@ -15,7 +39,7 @@ class _PlayPalAppState extends State<PlayPalApp> {
         debugShowCheckedModeBanner: false,
         title: 'PlayPal',
         theme: ThemeData(useMaterial3: true, colorScheme: const ColorScheme.dark(primary: Color(0xffe8bd42))),
-        home: const GameHome(),
+        home: const AuthGate(child: GameHome()),
       );
 }
 
@@ -137,19 +161,109 @@ class _GameHomeState extends State<GameHome> {
     );
   }
 
-  Widget _topBar() => Padding(
-        padding: const EdgeInsets.fromLTRB(13, 8, 13, 8),
-        child: Row(children: <Widget>[
-          Stack(clipBehavior: Clip.none, children: <Widget>[
-            const CircleAvatar(radius: 19, backgroundColor: Color(0xff9485cf), child: Icon(Icons.person, color: Color(0xff382d56), size: 29)),
-            Positioned(right: -1, bottom: -1, child: Container(width: 11, height: 11, decoration: BoxDecoration(color: const Color(0xff48e38e), border: Border.all(color: const Color(0xff1c1d2a), width: 2), shape: BoxShape.circle))),
-          ]),
-          const SizedBox(width: 10),
-          Expanded(child: Container(height: 45, decoration: BoxDecoration(color: const Color(0xff262735), borderRadius: BorderRadius.circular(25), border: Border.all(color: const Color(0xff56566b))), child: TextField(controller: _searchController, onTap: () => setState(() => _searching = true), onChanged: (_) => setState(() {}), style: const TextStyle(color: Colors.white), decoration: InputDecoration(prefixIcon: const Icon(Icons.search, color: Color(0xffd3d1dc)), suffixIcon: _searching ? IconButton(icon: const Icon(Icons.close, color: Colors.white70), onPressed: () => setState(() { _searchController.clear(); _searching = false; })) : null, hintText: 'Search games or friends...', hintStyle: const TextStyle(color: Color(0xffc1bfca), fontSize: 14), border: InputBorder.none)))),
-          const SizedBox(width: 12),
-          IconButton(tooltip: 'Inbox', onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const InboxScreen())), icon: const Icon(Icons.mail_outline_rounded, color: Color(0xffd6d4dd), size: 28)),
-        ]),
+  void _openProfile([UserProfile? profile]) async {
+    final String currentUid = AuthService.instance.currentUser?.uid ?? '';
+    final UserProfile p = profile ??
+        (await ProfileService.instance.getProfile(currentUid)) ??
+        UserProfile(
+          uid: currentUid.isEmpty ? 'guest' : currentUid,
+          displayName: 'Player',
+          isGuest: true,
+          createdAt: DateTime.now(),
+          lastActive: DateTime.now(),
+        );
+
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ProfileScreen(profile: p),
+        ),
       );
+    }
+  }
+
+  Widget _topBar() {
+    final String uid = AuthService.instance.currentUser?.uid ?? '';
+    return StreamBuilder<UserProfile?>(
+      stream: ProfileService.instance.watchProfile(uid),
+      builder: (context, snapshot) {
+        final UserProfile? profile = snapshot.data;
+        final PlayerAvatar avatar = profile?.avatar ?? PlayerAvatar.presets.first;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(13, 8, 13, 8),
+          child: Row(children: <Widget>[
+            GestureDetector(
+              onTap: () => _openProfile(profile),
+              child: Stack(clipBehavior: Clip.none, children: <Widget>[
+                CircleAvatar(
+                  radius: 19,
+                  backgroundColor: avatar.primaryColor,
+                  child: Icon(avatar.icon, color: Colors.white, size: 22),
+                ),
+                Positioned(
+                  right: -1,
+                  bottom: -1,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: const Color(0xff48e38e),
+                      border: Border.all(color: const Color(0xff1c1d2a), width: 2),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: const Color(0xff262735),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: const Color(0xff56566b)),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onTap: () => setState(() => _searching = true),
+                  onChanged: (_) => setState(() {}),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search, color: Color(0xffd3d1dc)),
+                    suffixIcon: _searching
+                        ? IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white70),
+                            onPressed: () => setState(() {
+                              _searchController.clear();
+                              _searching = false;
+                            }),
+                          )
+                        : null,
+                    hintText: profile != null
+                        ? 'Hi, ${profile.displayName}! Search games...'
+                        : 'Search games or friends...',
+                    hintStyle: const TextStyle(color: Color(0xffc1bfca), fontSize: 13),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              tooltip: 'Inbox',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const InboxScreen()),
+              ),
+              icon: const Icon(Icons.mail_outline_rounded,
+                  color: Color(0xffd6d4dd), size: 28),
+            ),
+          ]),
+        );
+      },
+    );
+  }
 
   Widget _bottomNavigation() {
     final List<IconData> icons = <IconData>[
@@ -173,7 +287,13 @@ class _GameHomeState extends State<GameHome> {
           children: List<Widget>.generate(
             icons.length,
             (int index) => IconButton(
-              onPressed: () => setState(() => _selectedTab = index),
+              onPressed: () {
+                if (index == 3) {
+                  _openProfile();
+                } else {
+                  setState(() => _selectedTab = index);
+                }
+              },
               icon: Icon(
                 icons[index],
                 size: 28,
