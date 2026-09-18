@@ -77,3 +77,4 @@ class GameWordDatabase {
     return prompts[r.nextInt(prompts.length)];
   }
 }
+

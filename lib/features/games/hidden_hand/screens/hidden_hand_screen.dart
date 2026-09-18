@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:design/core/models/user_profile.dart';
 import 'package:design/core/services/auth_service.dart';
 import 'package:design/core/services/profile_service.dart';
@@ -10,6 +12,7 @@ import '../widgets/drawing_toolbar.dart';
 import '../widgets/game_result_dialog.dart';
 import '../widgets/impostor_guess_modal.dart';
 import '../widgets/role_reveal_modal.dart';
+import '../widgets/thematic_components.dart';
 import '../widgets/voting_overlay.dart';
 
 class HiddenHandScreen extends StatefulWidget {
@@ -22,13 +25,14 @@ class HiddenHandScreen extends StatefulWidget {
 class _HiddenHandScreenState extends State<HiddenHandScreen> {
   late final HiddenHandEngine _engine;
   late final String _localUserId;
-  String _localDisplayName = 'Player';
+  String _localDisplayName = 'ssavi';
   String _localAvatarId = 'avatar_phoenix';
 
-  Color _selectedColor = const Color(0xffefc249);
+  Color _selectedColor = const Color(0xffffffff);
   double _selectedWidth = 4.0;
   bool _hideSecretWord = false;
   int _roomPlayerCount = 4;
+  int _activeNavTab = 0;
 
   @override
   void initState() {
@@ -40,7 +44,7 @@ class _HiddenHandScreenState extends State<HiddenHandScreen> {
 
     final UserProfile? profile = ProfileService.instance.getProfileSync(_localUserId);
     if (profile != null) {
-      _localDisplayName = profile.displayName.isEmpty ? 'Player' : profile.displayName;
+      _localDisplayName = profile.displayName.isEmpty ? 'ssavi' : profile.displayName;
       _localAvatarId = profile.avatarId;
     }
 
@@ -87,20 +91,23 @@ class _HiddenHandScreenState extends State<HiddenHandScreen> {
             final bool? shouldExit = await showDialog<bool>(
               context: context,
               builder: (ctx) => AlertDialog(
-                backgroundColor: const Color(0xff232537),
-                title: const Text('Leave Hidden Hand?', style: TextStyle(color: Colors.white)),
+                backgroundColor: const Color(0xff16192c),
+                title: Text(
+                  'Leave Hidden Hand?',
+                  style: GoogleFonts.cinzel(color: Colors.white, fontWeight: FontWeight.w800),
+                ),
                 content: const Text(
                   'A round is currently in progress. Leaving will forfeit the match.',
-                  style: TextStyle(color: Color(0xffa1a0b0)),
+                  style: TextStyle(color: Color(0xff94a3b8)),
                 ),
                 actions: <Widget>[
                   TextButton(
                     onPressed: () => Navigator.of(ctx).pop(false),
-                    child: const Text('STAY', style: TextStyle(color: Color(0xffefc249))),
+                    child: Text('STAY', style: GoogleFonts.cinzel(color: HiddenHandTheme.gold, fontWeight: FontWeight.w800)),
                   ),
                   TextButton(
                     onPressed: () => Navigator.of(ctx).pop(true),
-                    child: const Text('LEAVE', style: TextStyle(color: Color(0xfff87171))),
+                    child: Text('LEAVE', style: GoogleFonts.cinzel(color: const Color(0xfff87171), fontWeight: FontWeight.w800)),
                   ),
                 ],
               ),
@@ -110,28 +117,72 @@ class _HiddenHandScreenState extends State<HiddenHandScreen> {
             }
           },
           child: Scaffold(
-            backgroundColor: const Color(0xff161722),
-            body: SafeArea(
-              child: Stack(
-                children: <Widget>[
-                  // Main Game Layout
-                  Column(
-                    children: <Widget>[
-                      _buildHeader(state, localPlayer),
-                      const SizedBox(height: 8),
-                      _buildPlayerRibbon(state),
-                      const SizedBox(height: 10),
+            backgroundColor: const Color(0xff090b14),
+            body: Stack(
+              children: <Widget>[
+                // Layer 0: Atmospheric Detective Study Background Image
+                Positioned.fill(
+                  child: Image.asset(
+                    'assets/images/games/hidden_hand_bg.jpg',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: const Color(0xff0e101d),
+                    ),
+                  ),
+                ),
 
-                      // Canvas Area
+                // Layer 1: Radial Lamp Glow & Subtle Vignette
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(0.7, -0.8), // Lamp position at top-right
+                        radius: 1.3,
+                        colors: <Color>[
+                          Colors.transparent, // Preserve warm lamp glow!
+                          const Color(0xff070913).withValues(alpha: 0.38),
+                          const Color(0xff070913).withValues(alpha: 0.72),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Layer 2: Main Game Layout
+                SafeArea(
+                  child: Column(
+                    children: <Widget>[
+                      // Header Logo & Room Info Bar
+                      _buildHeader(state, localPlayer),
+                      const SizedBox(height: 6),
+
+                      // Elevated Player Cards Ribbon
+                      _buildPlayerRibbon(state),
+
+                      // Turn Banner (In-game only)
+                      if (state.phase == GamePhase.drawing) ...<Widget>[
+                        const SizedBox(height: 5),
+                        _buildActiveArtistBanner(state, localPlayer),
+                      ],
+
+                      const SizedBox(height: 5),
+
+                      // Main Canvas Area
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
                           child: DrawingCanvasWidget(
                             strokes: state.strokes,
                             isInteractive: isMyTurn,
                             activeColor: _selectedColor,
                             strokeWidth: _selectedWidth,
                             activePlayerId: _localUserId,
+                            glowColor: state.currentTurnPlayer != null
+                                ? Color(state.currentTurnPlayer!.assignedColorValue)
+                                : null,
+                            artistName: state.currentTurnPlayer?.displayName,
+                            showStickyNotes: true,
+                            showMaskWatermark: state.phase == GamePhase.lobby || state.strokes.isEmpty,
                             onStrokeCompleted: (stroke) {
                               _engine.addStroke(stroke);
                             },
@@ -139,56 +190,79 @@ class _HiddenHandScreenState extends State<HiddenHandScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 6),
 
-                      // Bottom Area (Lobby Setup or In-Game Toolbar)
+                      // Bottom Area: Lobby Controls or Drawing Toolbar
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: state.phase == GamePhase.lobby
                             ? _buildLobbyControls(state)
                             : DrawingToolbar(
                                 selectedColor: _selectedColor,
                                 selectedWidth: _selectedWidth,
                                 isInteractive: isMyTurn,
+                                submitLabel: 'DONE',
                                 onColorSelected: (c) => setState(() => _selectedColor = c),
                                 onWidthSelected: (w) => setState(() => _selectedWidth = w),
                                 onDoneTurn: () => _engine.endPlayerTurn(_localUserId),
                               ),
                       ),
+
+                      // Bottom Navigation Bar (In-game)
+                      if (state.phase != GamePhase.lobby)
+                        BottomNavBar(
+                          activeIndex: state.phase == GamePhase.voting ? 2 : _activeNavTab,
+                          onTabChanged: (index) {
+                            setState(() => _activeNavTab = index);
+                            if (index == 2 && state.phase == GamePhase.drawing) {
+                              _engine.callEmergencyVote();
+                            }
+                          },
+                        ),
                     ],
                   ),
+                ),
 
-                  // Phase Overlays
-                  if (state.phase == GamePhase.roleReveal && localPlayer != null)
-                    RoleRevealModal(
+                // Phase Overlays
+                if (state.phase == GamePhase.roleReveal && localPlayer != null)
+                  Positioned.fill(
+                    child: RoleRevealModal(
                       localPlayer: localPlayer,
                       prompt: state.secretPrompt,
+                      players: state.players,
                       onDismiss: () => _engine.beginDrawingPhase(),
                     ),
+                  ),
 
-                  if (state.phase == GamePhase.voting)
-                    VotingOverlay(
+                if (state.phase == GamePhase.voting)
+                  Positioned.fill(
+                    child: VotingOverlay(
                       state: state,
                       localPlayerId: _localUserId,
                       onCastVote: (target) => _engine.castVote(_localUserId, target),
+                      onSkipVote: () => _engine.castVote(_localUserId, 'SKIP'),
                     ),
+                  ),
 
-                  if (state.phase == GamePhase.impostorGuess)
-                    ImpostorGuessModal(
+                if (state.phase == GamePhase.impostorGuess)
+                  Positioned.fill(
+                    child: ImpostorGuessModal(
                       state: state,
                       localPlayerId: _localUserId,
                       onSubmitGuess: (guess) => _engine.submitImpostorGuess(guess),
                     ),
+                  ),
 
-                  if (state.phase == GamePhase.gameOver)
-                    GameResultDialog(
+                if (state.phase == GamePhase.gameOver)
+                  Positioned.fill(
+                    child: GameResultDialog(
                       state: state,
                       localPlayerId: _localUserId,
                       onPlayAgain: () => _engine.startMatch(),
                       onExit: () => Navigator.of(context).pop(),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         );
@@ -196,179 +270,232 @@ class _HiddenHandScreenState extends State<HiddenHandScreen> {
     );
   }
 
+  // Header Logo & Multi-segment Glass Info Bar
   Widget _buildHeader(HiddenHandState state, HiddenHandPlayer? localPlayer) {
     final bool isImpostor = localPlayer?.isImpostor ?? false;
     final bool inGame = state.phase != GamePhase.lobby;
+    final int impostorCount = state.players.length <= 5 ? 1 : 2;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 16, 0),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(14, 2, 14, 0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // Top Title Row with Authentic Logo
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              const Text(
-                'HIDDEN HAND',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                  letterSpacing: 1.2,
-                ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 18),
+                onPressed: () => Navigator.of(context).maybePop(),
               ),
-              Text(
-                state.roomCode,
-                style: const TextStyle(color: Color(0xffefc249), fontSize: 11, fontWeight: FontWeight.w700),
+              Stack(
+                alignment: Alignment.center,
+                children: <Widget>[
+                  const Opacity(
+                    opacity: 0.0,
+                    child: Text(
+                      'HIDDEN HAND',
+                      style: TextStyle(fontSize: 1),
+                    ),
+                  ),
+                  Image.asset(
+                    'assets/images/games/hidden_hand_logo.png',
+                    height: 36,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ],
               ),
+              const SizedBox(width: 36), // Balance back button
             ],
           ),
-          const Spacer(),
+          const SizedBox(height: 3),
 
-          // Secret Word Pill (for Artists) or Impostor Warning (for Impostor)
-          if (inGame)
-            GestureDetector(
-              onTap: () => setState(() => _hideSecretWord = !_hideSecretWord),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isImpostor ? const Color(0xff4c1d34) : const Color(0xff232537),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isImpostor ? const Color(0xfff43f5e) : const Color(0xffefc249),
-                    width: 1.2,
-                  ),
+          // Multi-segment Glass Info Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xd9101326),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xff2d3250), width: 1.0),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
-                child: Row(
+              ],
+            ),
+            child: Row(
+              children: <Widget>[
+                // Segment 1: Room Code
+                const Icon(Icons.auto_awesome_rounded, size: 14, color: HiddenHandTheme.cyanAccent),
+                const SizedBox(width: 4),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Icon(
-                      isImpostor
-                          ? Icons.visibility_off_rounded
-                          : (_hideSecretWord ? Icons.visibility_off_rounded : Icons.visibility_rounded),
-                      size: 15,
-                      color: isImpostor ? const Color(0xfff43f5e) : const Color(0xffefc249),
+                    const Text(
+                      'ROOM CODE',
+                      style: TextStyle(color: Color(0xff64748b), fontSize: 8, fontWeight: FontWeight.w800),
                     ),
-                    const SizedBox(width: 6),
                     Text(
-                      isImpostor
-                          ? 'IMPOSTOR'
-                          : (_hideSecretWord
-                              ? 'PEEK WORD'
-                              : '${state.secretPrompt.category}: ${state.secretPrompt.word}'),
-                      style: TextStyle(
-                        color: isImpostor ? const Color(0xfff43f5e) : Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 12,
+                      state.roomCode,
+                      style: GoogleFonts.cinzel(
+                        color: HiddenHandTheme.gold,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
                 ),
-              ),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: state.roomCode));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Room code copied!'),
+                        duration: Duration(seconds: 1),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    child: Icon(Icons.copy_rounded, size: 12, color: Color(0xff94a3b8)),
+                  ),
+                ),
+
+                const SizedBox(width: 4),
+                Container(width: 1, height: 20, color: const Color(0xff262b45)),
+                const SizedBox(width: 6),
+
+                // Segment 2: Category & Word
+                const Icon(Icons.category_rounded, size: 13, color: HiddenHandTheme.cyanAccent),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Text(
+                        'CATEGORY',
+                        style: TextStyle(color: Color(0xff64748b), fontSize: 8, fontWeight: FontWeight.w800),
+                      ),
+                      GestureDetector(
+                        onTap: inGame ? () => setState(() => _hideSecretWord = !_hideSecretWord) : null,
+                        child: Text(
+                          inGame
+                              ? (isImpostor
+                                  ? 'Impostor'
+                                  : (_hideSecretWord
+                                      ? 'Peek'
+                                      : '${state.secretPrompt.category}: ${state.secretPrompt.word}'))
+                              : 'Objects',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isImpostor ? HiddenHandTheme.redAccent : Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 4),
+                Container(width: 1, height: 20, color: const Color(0xff262b45)),
+                const SizedBox(width: 6),
+
+                // Segment 3: Impostor Info
+                Icon(
+                  Icons.theater_comedy_rounded,
+                  size: 14,
+                  color: isImpostor ? HiddenHandTheme.redAccent : HiddenHandTheme.gold,
+                ),
+                const SizedBox(width: 4),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      '${state.players.length}P • $impostorCount Impostor',
+                      style: TextStyle(
+                        color: isImpostor ? HiddenHandTheme.redAccent : HiddenHandTheme.gold,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const Text(
+                      'One draws differently',
+                      style: TextStyle(color: Color(0xff64748b), fontSize: 7.5),
+                    ),
+                  ],
+                ),
+              ],
             ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPlayerRibbon(HiddenHandState state) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        itemCount: state.players.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final HiddenHandPlayer p = state.players[index];
-          final bool isTurn = state.phase == GamePhase.drawing && p.id == state.currentTurnPlayerId;
-          final bool isSelf = p.id == _localUserId;
+  IconData _getPlayerAvatarIcon(HiddenHandPlayer player, int index) {
+    if (player.avatarId.isNotEmpty) {
+      final PlayerAvatar preset = PlayerAvatar.getById(player.avatarId);
+      if (preset.id != 'avatar_phoenix' || player.avatarId == 'avatar_phoenix') {
+        return preset.icon;
+      }
+    }
+    const List<IconData> icons = <IconData>[
+      Icons.military_tech_rounded,         // Monarch / Host
+      Icons.sports_esports_rounded,        // Nova (Cyber)
+      Icons.auto_awesome_rounded,          // Pixel (Magic/Stars)
+      Icons.shield_moon_rounded,           // Viper (Night Shield)
+      Icons.radar_rounded,                 // Echo (Radar)
+      Icons.local_fire_department_rounded, // Blaze (Fire)
+      Icons.public_rounded,                // Atlas (World)
+      Icons.lock_rounded,                  // Cipher (Key)
+    ];
+    return icons[index % icons.length];
+  }
 
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: isTurn ? const Color(0xff2d2245) : const Color(0xff1e202f),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isTurn
-                    ? const Color(0xffefc249)
-                    : (p.isEliminated ? Colors.transparent : const Color(0xff333547)),
-                width: isTurn ? 2 : 1,
+  // Compact Elevated Player Cards Ribbon (Horizontally Centered for 3-4 players, scrollable if overflowing)
+  Widget _buildPlayerRibbon(HiddenHandState state) {
+    final int displayItemCount = state.phase == GamePhase.lobby && state.players.length < 8
+        ? state.players.length + 1
+        : state.players.length;
+
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final List<Widget> cardWidgets = <Widget>[
+            for (int i = 0; i < displayItemCount; i++) ...<Widget>[
+              if (i > 0) const SizedBox(width: 8),
+              if (i == state.players.length)
+                _buildInviteCard()
+              else
+                _buildPlayerCard(state.players[i], i, state),
+            ],
+          ];
+
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: cardWidgets,
               ),
-              boxShadow: isTurn
-                  ? <BoxShadow>[
-                      BoxShadow(
-                        color: const Color(0xffefc249).withValues(alpha: 0.3),
-                        blurRadius: 10,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Stack(
-                  alignment: Alignment.center,
-                  children: <Widget>[
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Color(p.assignedColorValue),
-                      child: Text(
-                        p.displayName.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(
-                          color: Color(0xff12131c),
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    if (p.isEliminated)
-                      const Icon(Icons.close_rounded, color: Colors.red, size: 26),
-                  ],
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      p.displayName + (isSelf ? ' (You)' : ''),
-                      style: TextStyle(
-                        color: p.isEliminated ? Colors.white38 : Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        decoration: p.isEliminated ? TextDecoration.lineThrough : null,
-                      ),
-                    ),
-                    if (isTurn)
-                      Row(
-                        children: <Widget>[
-                          const Icon(Icons.timer_outlined, size: 11, color: Color(0xffefc249)),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${state.turnTimeRemaining}s',
-                            style: const TextStyle(
-                              color: Color(0xffefc249),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      )
-                    else if (p.hasDrawnThisTurn)
-                      const Text('Drawn', style: TextStyle(color: Color(0xff10b981), fontSize: 10))
-                    else
-                      Text(
-                        p.isBot ? 'Bot' : 'Player',
-                        style: const TextStyle(color: Color(0xff717082), fontSize: 10),
-                      ),
-                  ],
-                ),
-              ],
             ),
           );
         },
@@ -376,73 +503,297 @@ class _HiddenHandScreenState extends State<HiddenHandScreen> {
     );
   }
 
+  Widget _buildPlayerCard(HiddenHandPlayer p, int index, HiddenHandState state) {
+    final bool isTurn = state.phase == GamePhase.drawing && p.id == state.currentTurnPlayerId;
+    final bool isSelf = p.id == _localUserId;
+    final Color pColor = Color(p.assignedColorValue);
+
+    return Container(
+      width: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+      decoration: BoxDecoration(
+        color: isTurn
+            ? const Color(0xff2a2210)
+            : const Color(0xcc121528),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: isTurn
+              ? HiddenHandTheme.gold
+              : (isSelf ? HiddenHandTheme.gold.withValues(alpha: 0.85) : pColor.withValues(alpha: 0.7)),
+          width: isTurn ? 2.0 : 1.2,
+        ),
+        boxShadow: isTurn
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: HiddenHandTheme.gold.withValues(alpha: 0.4),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            // Crystal Jewel Avatar with Custom Profile Icon
+            JewelAvatarWidget(
+              icon: _getPlayerAvatarIcon(p, index),
+              color: pColor,
+              isHost: false,
+              isEliminated: p.isEliminated,
+              size: 24,
+            ),
+            const SizedBox(height: 2),
+
+            // Player Name
+            Text(
+              p.displayName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.cinzel(
+                color: isTurn ? HiddenHandTheme.gold : Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 8.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Invite Player Card (Dotted Border, Compact)
+  Widget _buildInviteCard() {
+    return InkWell(
+      onTap: () {
+        if (_roomPlayerCount < 8) {
+          _onPlayerCountChanged(_roomPlayerCount + 1);
+        }
+      },
+      borderRadius: BorderRadius.circular(13),
+      child: Container(
+        width: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0x3316192c),
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(color: const Color(0xff374151), width: 1.2),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const CircleAvatar(
+                radius: 12,
+                backgroundColor: Color(0xff22273f),
+                child: Icon(Icons.add_rounded, color: Color(0xff94a3b8), size: 15),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Invite',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.cinzel(color: const Color(0xff94a3b8), fontSize: 8.5, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Active Artist Turn Banner
+  Widget _buildActiveArtistBanner(HiddenHandState state, HiddenHandPlayer? localPlayer) {
+    final HiddenHandPlayer? current = state.currentTurnPlayer;
+    if (current == null) return const SizedBox.shrink();
+
+    final bool isMyTurn = current.id == _localUserId;
+    final Color playerColor = Color(current.assignedColorValue);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xeb101326),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isMyTurn ? HiddenHandTheme.gold : const Color(0xff2d3148),
+          width: 1.2,
+        ),
+        boxShadow: isMyTurn
+            ? <BoxShadow>[
+                BoxShadow(
+                  color: HiddenHandTheme.gold.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        children: <Widget>[
+          // Round Progress Indicator: ROUND 1/4 (dots)
+          RoundDotIndicator(
+            currentRound: state.roundNumber,
+            totalRounds: 4,
+          ),
+          const SizedBox(width: 8),
+          Container(width: 1, height: 24, color: const Color(0xff262b45)),
+          const SizedBox(width: 8),
+
+          // Center Turn Title & Subtitle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  isMyTurn
+                      ? 'YOUR TURN TO DRAW'
+                      : '${current.displayName.toUpperCase()} DRAWING',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.cinzel(
+                    color: isMyTurn ? HiddenHandTheme.gold : playerColor,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12.5,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  isMyTurn
+                      ? (localPlayer?.isImpostor == true
+                          ? 'Blend in! Sketch a plausible line.'
+                          : 'Sketch one part of: ${state.secretPrompt.word}')
+                      : (current.isBot ? 'AI artist adding a stroke...' : 'Collaborative drawing in progress...'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isMyTurn ? const Color(0xfffde68a) : const Color(0xff94a3b8),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Container(width: 1, height: 24, color: const Color(0xff262b45)),
+          const SizedBox(width: 8),
+
+          // Circular Countdown Timer Ring
+          TimerRingWidget(
+            secondsRemaining: state.turnTimeRemaining,
+            totalSeconds: 15,
+            size: 40,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Lobby Controls & Start Button
   Widget _buildLobbyControls(HiddenHandState state) {
     final int impostorCount = _roomPlayerCount <= 5 ? 1 : 2;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xff1e202f),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xff333547)),
+        color: const Color(0xeb101326),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xff2c314d)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          // Header Row: ROOM SIZE: | 4 Players • 1 Impostor
           Row(
             children: <Widget>[
-              const Icon(Icons.group_rounded, color: Color(0xffefc249), size: 20),
-              const SizedBox(width: 8),
-              const Text(
-                'ROOM SIZE:',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+              const Icon(Icons.group_rounded, color: HiddenHandTheme.gold, size: 18),
+              const SizedBox(width: 6),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    'ROOM SIZE:',
+                    style: GoogleFonts.cinzel(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11.5),
+                  ),
+                  const Text(
+                    'Choose total players',
+                    style: TextStyle(color: Color(0xff94a3b8), fontSize: 8.5),
+                  ),
+                ],
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xff2d2245),
+                  color: const Color(0xff181c34),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xffefc249)),
+                  border: Border.all(color: HiddenHandTheme.gold.withValues(alpha: 0.5)),
                 ),
-                child: Text(
-                  '$_roomPlayerCount Players ($impostorCount ${impostorCount == 1 ? 'Impostor' : 'Impostors'})',
-                  style: const TextStyle(
-                    color: Color(0xffefc249),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const Icon(Icons.theater_comedy_rounded, size: 12, color: HiddenHandTheme.gold),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$_roomPlayerCount Players • $impostorCount ${impostorCount == 1 ? 'Impostor' : 'Impostors'}',
+                      style: GoogleFonts.cinzel(
+                        color: HiddenHandTheme.gold,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
-          // Player count selector buttons: 3, 4, 5, 6, 7, 8
+          // Player Count Selector Buttons: 3, 4, 5, 6, 7, 8
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <int>[3, 4, 5, 6, 7, 8].map((count) {
               final bool isSelected = _roomPlayerCount == count;
               return Expanded(
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  child: OutlinedButton(
-                    onPressed: () => _onPlayerCountChanged(count),
-                    style: OutlinedButton.styleFrom(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  child: InkWell(
+                    onTap: () => _onPlayerCountChanged(count),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
-                      minimumSize: Size.zero,
-                      backgroundColor: isSelected ? const Color(0xffefc249) : Colors.transparent,
-                      foregroundColor: isSelected ? const Color(0xff12131c) : Colors.white,
-                      side: BorderSide(
-                        color: isSelected ? const Color(0xffefc249) : const Color(0xff444760),
-                        width: 1.5,
+                      decoration: BoxDecoration(
+                        gradient: isSelected ? HiddenHandTheme.goldGradient : null,
+                        color: isSelected ? null : const Color(0xff16192c),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected ? HiddenHandTheme.gold : const Color(0xff2d3356),
+                          width: 1.2,
+                        ),
+                        boxShadow: isSelected
+                            ? <BoxShadow>[
+                                BoxShadow(
+                                  color: HiddenHandTheme.gold.withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                ),
+                              ]
+                            : null,
                       ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text(
-                      '$count',
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                      child: Center(
+                        child: Text(
+                          '$count',
+                          style: GoogleFonts.cinzel(
+                            color: isSelected ? const Color(0xff12131c) : Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -450,21 +801,14 @@ class _HiddenHandScreenState extends State<HiddenHandScreen> {
             }).toList(),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
-          ElevatedButton.icon(
+          // Large START ROUND Golden CTA Button
+          GoldenCtaButton(
+            height: 48,
             onPressed: () => _engine.startMatch(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xffefc249),
-              foregroundColor: const Color(0xff1c1d2a),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            icon: const Icon(Icons.play_arrow_rounded, size: 22),
-            label: const Text(
-              'START ROUND',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1.0),
-            ),
+            icon: Icons.play_arrow_rounded,
+            label: 'START ROUND',
           ),
         ],
       ),

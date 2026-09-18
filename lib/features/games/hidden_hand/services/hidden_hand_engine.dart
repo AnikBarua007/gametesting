@@ -7,6 +7,7 @@ import '../models/drawing_stroke.dart';
 import '../models/game_words.dart';
 import '../models/hidden_hand_player.dart';
 import '../models/hidden_hand_state.dart';
+import 'bot_drawing_service.dart';
 
 class HiddenHandEngine {
   late HiddenHandState _state;
@@ -16,6 +17,8 @@ class HiddenHandEngine {
   Timer? _turnTimer;
   Timer? _botActionTimer;
   final Random _random = Random();
+  final BotDrawingService _botDrawingService = BotDrawingService();
+  int _artistStrokeStep = 0;
 
   Stream<HiddenHandState> get stateStream => _stateController.stream;
   HiddenHandState get state => _state;
@@ -125,6 +128,7 @@ class HiddenHandEngine {
     if (currentPlayers.length < 3) return;
 
     final DrawingWordPrompt prompt = GameWordDatabase.getRandomPrompt(_random);
+    _artistStrokeStep = 0;
 
     // Rule: 3-5 players = 1 Impostor, 6-8 players = 2 Impostors
     final int impostorCount = currentPlayers.length <= 5 ? 1 : 2;
@@ -215,42 +219,31 @@ class HiddenHandEngine {
   }
 
   void _simulateBotStroke(HiddenHandPlayer bot) {
-    // Generate procedural stylized strokes within canvas coordinates (approx 300x300 area)
-    final double cx = 100.0 + _random.nextDouble() * 150.0;
-    final double cy = 100.0 + _random.nextDouble() * 150.0;
-    final List<DrawingPoint> points = <DrawingPoint>[];
-
-    final int strokeType = _random.nextInt(3);
-    if (strokeType == 0) {
-      // Arc / curve
-      final double radius = 25.0 + _random.nextDouble() * 40.0;
-      final double startAngle = _random.nextDouble() * pi;
-      for (int i = 0; i <= 6; i++) {
-        final double a = startAngle + (i * (pi / 5));
-        points.add(DrawingPoint(cx + cos(a) * radius, cy + sin(a) * radius));
-      }
-    } else if (strokeType == 1) {
-      // Straight feature line
-      final double dx = (_random.nextDouble() - 0.5) * 70.0;
-      final double dy = (_random.nextDouble() - 0.5) * 70.0;
-      points.add(DrawingPoint(cx, cy));
-      points.add(DrawingPoint(cx + dx * 0.5, cy + dy * 0.5));
-      points.add(DrawingPoint(cx + dx, cy + dy));
+    final DrawingStroke botStroke;
+    if (bot.isImpostor) {
+      // Impostor bot does not know the secret object; blends in with existing strokes
+      botStroke = _botDrawingService.generateImpostorStroke(
+        botId: bot.id,
+        existingStrokes: _state.strokes,
+        colorValue: bot.assignedColorValue,
+        canvasWidth: 320.0,
+        canvasHeight: 320.0,
+      );
     } else {
-      // Zigzag / detail
-      points.add(DrawingPoint(cx - 20, cy - 10));
-      points.add(DrawingPoint(cx, cy + 15));
-      points.add(DrawingPoint(cx + 20, cy - 10));
+      // Artist bot sketches the next progressive part of the object
+      botStroke = _botDrawingService.generateArtistStroke(
+        botId: bot.id,
+        prompt: _state.secretPrompt,
+        stepIndex: _artistStrokeStep,
+        colorValue: bot.assignedColorValue,
+        canvasWidth: 320.0,
+        canvasHeight: 320.0,
+      );
+      _artistStrokeStep++;
     }
 
-    final DrawingStroke botStroke = DrawingStroke(
-      playerId: bot.id,
-      points: points,
-      colorValue: bot.assignedColorValue,
-      strokeWidth: 4.0,
-    );
-
-    final List<DrawingStroke> updatedStrokes = List<DrawingStroke>.from(_state.strokes)..add(botStroke);
+    final List<DrawingStroke> updatedStrokes =
+        List<DrawingStroke>.from(_state.strokes)..add(botStroke);
     emitState(_state.copyWith(strokes: updatedStrokes));
   }
 
@@ -259,7 +252,9 @@ class HiddenHandEngine {
     if (_state.phase != GamePhase.drawing) return;
     if (stroke.playerId != _state.currentTurnPlayerId) return;
 
-    final List<DrawingStroke> updated = List<DrawingStroke>.from(_state.strokes)..add(stroke);
+    _artistStrokeStep++;
+    final List<DrawingStroke> updated =
+        List<DrawingStroke>.from(_state.strokes)..add(stroke);
     emitState(_state.copyWith(strokes: updated));
   }
 
@@ -328,6 +323,20 @@ class HiddenHandEngine {
 
       emitState(_state.copyWith(players: updated));
     });
+  }
+
+  /// Triggers an immediate emergency vote phase
+  void callEmergencyVote() {
+    if (_state.phase != GamePhase.drawing) return;
+    _turnTimer?.cancel();
+    _botActionTimer?.cancel();
+
+    emitState(_state.copyWith(
+      phase: GamePhase.voting,
+      statusMessage: 'Emergency vote called! Find the fake artist.',
+    ));
+
+    _handleBotVoting();
   }
 
   /// Casts a vote from [voterId] to [targetId] ('SKIP' or another player's id)

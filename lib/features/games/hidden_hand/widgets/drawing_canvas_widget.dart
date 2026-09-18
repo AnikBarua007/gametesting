@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/drawing_stroke.dart';
+import 'thematic_components.dart';
 
 class DrawingCanvasWidget extends StatefulWidget {
   final List<DrawingStroke> strokes;
@@ -7,6 +8,10 @@ class DrawingCanvasWidget extends StatefulWidget {
   final Color activeColor;
   final double strokeWidth;
   final String activePlayerId;
+  final Color? glowColor;
+  final String? artistName;
+  final bool showStickyNotes;
+  final bool showMaskWatermark;
   final ValueChanged<DrawingStroke>? onStrokeCompleted;
 
   const DrawingCanvasWidget({
@@ -16,6 +21,10 @@ class DrawingCanvasWidget extends StatefulWidget {
     required this.activeColor,
     required this.strokeWidth,
     required this.activePlayerId,
+    this.glowColor,
+    this.artistName,
+    this.showStickyNotes = true,
+    this.showMaskWatermark = true,
     this.onStrokeCompleted,
   });
 
@@ -66,40 +75,146 @@ class _DrawingCanvasWidgetState extends State<DrawingCanvasWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final Color borderColor = widget.isInteractive
+        ? HiddenHandTheme.gold
+        : (widget.glowColor ?? const Color(0xff3b82f6));
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(22),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xff12131c),
-          borderRadius: BorderRadius.circular(20),
+          color: const Color(0xff0d1020).withValues(alpha: 0.94),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: widget.isInteractive
-                ? const Color(0xffefc249)
-                : const Color(0xff333446),
-            width: widget.isInteractive ? 2.5 : 1.5,
+            color: borderColor.withValues(alpha: widget.isInteractive ? 0.9 : 0.45),
+            width: widget.isInteractive ? 2.2 : 1.5,
           ),
           boxShadow: <BoxShadow>[
-            if (widget.isInteractive)
-              BoxShadow(
-                color: const Color(0xffefc249).withValues(alpha: 0.18),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
+            BoxShadow(
+              color: borderColor.withValues(alpha: widget.isInteractive ? 0.22 : 0.08),
+              blurRadius: 20,
+              spreadRadius: 1,
+            ),
           ],
         ),
-        child: GestureDetector(
-          onPanStart: _onPanStart,
-          onPanUpdate: _onPanUpdate,
-          onPanEnd: _onPanEnd,
-          child: CustomPaint(
-            painter: _CanvasPainter(
-              strokes: widget.strokes,
-              currentPoints: _currentPoints,
-              currentColor: widget.activeColor,
-              currentStrokeWidth: widget.strokeWidth,
+        child: Stack(
+          children: <Widget>[
+            // Blueprint grid background
+            Positioned.fill(
+              child: CustomPaint(
+                painter: BlueprintGridPainter(step: 24.0),
+              ),
             ),
-            child: const SizedBox.expand(),
-          ),
+
+            // Exact Venetian mask watermark from reference assets (center behind strokes)
+            if (widget.showMaskWatermark && widget.strokes.length < 15)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/games/canvas_mask_watermark.png',
+                      width: 135,
+                      height: 155,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ),
+
+            // Drawing canvas and gesture detector
+            GestureDetector(
+              onPanStart: _onPanStart,
+              onPanUpdate: _onPanUpdate,
+              onPanEnd: _onPanEnd,
+              child: CustomPaint(
+                painter: _CanvasPainter(
+                  strokes: widget.strokes,
+                  currentPoints: _currentPoints,
+                  currentColor: widget.activeColor,
+                  currentStrokeWidth: widget.strokeWidth,
+                ),
+                child: const SizedBox.expand(),
+              ),
+            ),
+
+            // Top-right status badge
+            Positioned(
+              top: 10,
+              right: 12,
+              child: IgnorePointer(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 160),
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xff121526).withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: borderColor.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xff10b981),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: const Color(0xff10b981).withValues(alpha: 0.7),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          widget.isInteractive
+                              ? 'Your Brush Active'
+                              : (widget.artistName != null
+                                  ? '${widget.artistName} Drawing'
+                                  : 'Brush Ready'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: widget.isInteractive
+                                ? HiddenHandTheme.gold
+                                : Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Exact Sticky Note from reference UI (Bottom-Left only, attached to border)
+            if (widget.showStickyNotes)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                child: IgnorePointer(
+                  child: Image.asset(
+                    'assets/images/games/sticky_note_transparent.png',
+                    width: 80,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const StickyNoteWidget(
+                      text: 'GOOD ART\nREVEALS\nEVERYTHING',
+                      angle: -0.05,
+                      width: 80,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -121,19 +236,6 @@ class _CanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Subtle background grid
-    final Paint gridPaint = Paint()
-      ..color = const Color(0xff1e202e)
-      ..strokeWidth = 0.8;
-
-    const double step = 28.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
     // Render historical strokes
     for (final DrawingStroke stroke in strokes) {
       if (stroke.points.isEmpty) continue;
