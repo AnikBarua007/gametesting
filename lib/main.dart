@@ -10,6 +10,7 @@ import 'features/auth/widgets/auth_gate.dart';
 import 'features/games/hidden_hand/screens/hidden_hand_screen.dart';
 import 'features/games/hidden_hand/widgets/thematic_components.dart';
 import 'features/games/georush/screens/georush_screen.dart';
+import 'features/games/half_and_half/screens/half_and_half_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 
 void main() async {
@@ -65,7 +66,7 @@ class _GameHomeState extends State<GameHome> {
     Game('casefile', 'CASEFILE', 'Solve a fast-moving case with friends.', Icons.manage_search_rounded, Color(0xff1e345d), Color(0xff9b6031), Color(0xff4178d7)),
     Game('sketch-party', 'SKETCH\nPARTY', 'Draw, guess, and race the clock.', Icons.gesture_rounded, Color(0xff08abc4), Color(0xff2176c7), Color(0xfff4d935)),
     Game('georush', 'GEORUSH', 'Explore the world before time runs out.', Icons.public_rounded, Color(0xff08705c), Color(0xff0c3e46), Color(0xffe4be55)),
-    Game('half-half', 'HALF &\nHALF', 'Collaborate to complete the picture.', Icons.contrast_rounded, Color(0xffb26945), Color(0xff2154aa), Color(0xfff4bd4d)),
+    Game('half-half', 'HALF &\nHALF', 'Collaborate to complete the picture.', Icons.back_hand_rounded, Color(0xff4a3272), Color(0xff6b47a4), Color(0xffc4b5fd)),
     Game('match-hup', 'MATCH\nHUP', 'Find the matching pair first.', Icons.favorite_outline_rounded, Color(0xffb96b71), Color(0xff205966), Color(0xffee9e98)),
   ];
 
@@ -97,6 +98,12 @@ class _GameHomeState extends State<GameHome> {
     if (game.id == 'georush') {
       Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const GeoRushScreen()),
+      );
+      return;
+    }
+    if (game.id == 'half-half') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const HalfAndHalfScreen()),
       );
       return;
     }
