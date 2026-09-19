@@ -6,6 +6,7 @@ import '../models/half_and_half_drawing.dart';
 import '../models/half_and_half_state.dart';
 import '../services/half_and_half_engine.dart';
 import '../widgets/half_and_half_canvas.dart';
+import '../widgets/half_and_half_theme.dart';
 import '../widgets/half_and_half_toolbar.dart';
 import '../widgets/half_lobby_dialog.dart';
 import '../widgets/memorize_phase_widget.dart';
@@ -142,19 +143,16 @@ class _HalfAndHalfScreenState extends State<HalfAndHalfScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                const Text(
+                Text(
                   'HALF & HALF',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                    letterSpacing: 1.2,
+                  style: HalfAndHalfTheme.title(
+                    fontSize: 17,
+                    letterSpacing: 1.0,
                   ),
                 ),
                 Text(
                   _getPhaseStatusText(state),
-                  style: const TextStyle(
-                    color: Color(0xffc4b5fd),
+                  style: HalfAndHalfTheme.body(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -169,14 +167,14 @@ class _HalfAndHalfScreenState extends State<HalfAndHalfScreen> {
             decoration: BoxDecoration(
               color: const Color(0xff2d1f4e),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xff7c3aed), width: 1.1),
+              border: Border.all(color: HalfAndHalfTheme.purplePrimary, width: 1.1),
             ),
             child: Text(
               state.localRole.playerLabel,
-              style: const TextStyle(
-                color: Color(0xffe8bd42),
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
+              style: HalfAndHalfTheme.badge(
+                color: HalfAndHalfTheme.accentGold,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -210,7 +208,7 @@ class _HalfAndHalfScreenState extends State<HalfAndHalfScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
             icon: const Icon(Icons.play_arrow_rounded),
-            label: const Text('Join / Start Match', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            label: Text('Join / Start Match', style: HalfAndHalfTheme.button(fontSize: 16)),
             onPressed: _showLobbyDialog,
           ),
         );
@@ -233,11 +231,10 @@ class _HalfAndHalfScreenState extends State<HalfAndHalfScreen> {
               // Title matching Phone 2 & 3
               Text(
                 isTop ? 'Draw the Top Half' : 'Draw Bottom Half to Match',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: HalfAndHalfTheme.title(
                   fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
                 ),
               ),
 
@@ -296,15 +293,15 @@ class _HalfAndHalfScreenState extends State<HalfAndHalfScreen> {
       builder: (BuildContext ctx) => AlertDialog(
         backgroundColor: const Color(0xff18122d),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text('Leave Match?', style: TextStyle(color: Colors.white)),
-        content: const Text(
+        title: Text('Leave Match?', style: HalfAndHalfTheme.title(fontSize: 18)),
+        content: Text(
           'Your drawing will be discarded and your partner will be notified.',
-          style: TextStyle(color: Colors.white70),
+          style: HalfAndHalfTheme.body(fontSize: 13, color: Colors.white70),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Keep Drawing', style: TextStyle(color: Color(0xffa78bfa))),
+            child: Text('Keep Drawing', style: HalfAndHalfTheme.button(fontSize: 14, color: HalfAndHalfTheme.purpleAccent)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -312,7 +309,7 @@ class _HalfAndHalfScreenState extends State<HalfAndHalfScreen> {
               Navigator.pop(ctx);
               Navigator.of(context).pop();
             },
-            child: const Text('Exit', style: TextStyle(color: Colors.white)),
+            child: Text('Exit', style: HalfAndHalfTheme.button(fontSize: 14)),
           ),
         ],
       ),

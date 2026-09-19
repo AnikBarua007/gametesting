@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/half_and_half_state.dart';
+import 'half_and_half_theme.dart';
 
 class HalfLobbyDialog extends StatefulWidget {
   final Function({required HalfAndHalfRole role, required bool isSoloWithBot, String? roomCode}) onStartMatch;
@@ -69,16 +70,23 @@ class _HalfLobbyDialogState extends State<HalfLobbyDialog> {
                   child: const Icon(Icons.handshake_rounded, color: Color(0xffc4b5fd), size: 24),
                 ),
                 const SizedBox(width: 12),
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
                       'HALF & HALF',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                      style: HalfAndHalfTheme.title(
+                        fontSize: 18,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                     Text(
                       '1.1k Collaborating right now',
-                      style: TextStyle(color: Color(0xff34d399), fontSize: 11.5, fontWeight: FontWeight.w600),
+                      style: HalfAndHalfTheme.body(
+                        color: HalfAndHalfTheme.accentGreen,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -88,9 +96,14 @@ class _HalfLobbyDialogState extends State<HalfLobbyDialog> {
             const SizedBox(height: 20),
 
             // Role Selector: Top Half vs Bottom Half
-            const Text(
+            Text(
               'CHOOSE YOUR HALF:',
-              style: TextStyle(color: Colors.white60, fontSize: 11.5, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+              style: HalfAndHalfTheme.badge(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -117,15 +130,19 @@ class _HalfLobbyDialogState extends State<HalfLobbyDialog> {
 
             // Searching indicator or Options
             if (_isSearching)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Column(
                   children: <Widget>[
-                    CircularProgressIndicator(color: Color(0xffa78bfa)),
-                    SizedBox(height: 14),
+                    const CircularProgressIndicator(color: HalfAndHalfTheme.purpleAccent),
+                    const SizedBox(height: 14),
                     Text(
                       'Searching for online partner...',
-                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                      style: HalfAndHalfTheme.body(
+                        color: Colors.white70,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -134,14 +151,17 @@ class _HalfLobbyDialogState extends State<HalfLobbyDialog> {
               // Quick Match Button
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff7c3aed),
+                  backgroundColor: HalfAndHalfTheme.purplePrimary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 6,
                 ),
                 icon: const Icon(Icons.flash_on_rounded),
-                label: const Text('Quick Match (1 vs 1 Online)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                label: Text(
+                  'Quick Match (1 vs 1 Online)',
+                  style: HalfAndHalfTheme.button(fontSize: 14.5),
+                ),
                 onPressed: _triggerQuickMatch,
               ),
 
@@ -150,13 +170,16 @@ class _HalfLobbyDialogState extends State<HalfLobbyDialog> {
               // Practice Solo with Bot
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xffc4b5fd),
-                  side: const BorderSide(color: Color(0xff6d28d9)),
+                  foregroundColor: HalfAndHalfTheme.purpleLight,
+                  side: const BorderSide(color: HalfAndHalfTheme.purpleBorderLight),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 icon: const Icon(Icons.smart_toy_rounded),
-                label: const Text('Practice Solo (with Bot Partner)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                label: Text(
+                  'Practice Solo (with Bot Partner)',
+                  style: HalfAndHalfTheme.button(fontSize: 13.5, color: HalfAndHalfTheme.purpleLight),
+                ),
                 onPressed: _triggerSoloBot,
               ),
             ],
@@ -193,10 +216,10 @@ class _HalfLobbyDialogState extends State<HalfLobbyDialog> {
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
+              style: HalfAndHalfTheme.badge(
                 color: isSelected ? Colors.white : Colors.white60,
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],

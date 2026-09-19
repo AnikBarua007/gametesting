@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/half_and_half_prompt.dart';
 import '../models/half_and_half_state.dart';
+import 'half_and_half_theme.dart';
 
 class MemorizePhaseWidget extends StatelessWidget {
   final HalfAndHalfPrompt prompt;
@@ -27,10 +28,8 @@ class MemorizePhaseWidget extends StatelessWidget {
         // Phase Title
         Text(
           roleTitle,
-          style: const TextStyle(
-            color: Colors.white,
+          style: HalfAndHalfTheme.title(
             fontSize: 22,
-            fontWeight: FontWeight.w800,
             letterSpacing: 0.4,
           ),
         ),
@@ -96,10 +95,10 @@ class MemorizePhaseWidget extends StatelessWidget {
                                 alignment: Alignment.center,
                                 child: Text(
                                   isTop ? 'Partner will draw this half' : 'Partner will draw this half',
-                                  style: const TextStyle(
+                                  style: HalfAndHalfTheme.body(
                                     color: Colors.white38,
                                     fontSize: 12,
-                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.w400,
                                   ),
                                 ),
                               ),
@@ -115,7 +114,7 @@ class MemorizePhaseWidget extends StatelessWidget {
                                   Expanded(
                                     child: Container(
                                       height: 2,
-                                      color: const Color(0xffe8bd42).withValues(alpha: 0.6),
+                                      color: HalfAndHalfTheme.accentGold.withValues(alpha: 0.6),
                                     ),
                                   ),
                                   Container(
@@ -123,21 +122,21 @@ class MemorizePhaseWidget extends StatelessWidget {
                                     decoration: BoxDecoration(
                                       color: const Color(0xff22143d),
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xffe8bd42), width: 1),
+                                      border: Border.all(color: HalfAndHalfTheme.accentGold, width: 1),
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       'Seam Guideline',
-                                      style: TextStyle(
-                                        color: Color(0xffe8bd42),
+                                      style: HalfAndHalfTheme.badge(
+                                        color: HalfAndHalfTheme.accentGold,
                                         fontSize: 10,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                   ),
                                   Expanded(
                                     child: Container(
                                       height: 2,
-                                      color: const Color(0xffe8bd42).withValues(alpha: 0.6),
+                                      color: HalfAndHalfTheme.accentGold.withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ],
@@ -159,9 +158,9 @@ class MemorizePhaseWidget extends StatelessWidget {
         // Countdown Timer Block
         Column(
           children: <Widget>[
-            const Text(
+            Text(
               'MEMORIZE IN:',
-              style: TextStyle(
+              style: HalfAndHalfTheme.badge(
                 color: Colors.white60,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -171,10 +170,8 @@ class MemorizePhaseWidget extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               formattedTime,
-              style: const TextStyle(
-                color: Colors.white,
+              style: HalfAndHalfTheme.title(
                 fontSize: 38,
-                fontWeight: FontWeight.w900,
                 letterSpacing: 2.0,
               ),
             ),
@@ -186,7 +183,7 @@ class MemorizePhaseWidget extends StatelessWidget {
         // Subtitle indicator matching mockup
         Text(
           '1. MEMORIZE REFERENCE (${isTop ? "Player A" : "Player B"})',
-          style: const TextStyle(
+          style: HalfAndHalfTheme.body(
             color: Colors.white38,
             fontSize: 12,
             fontWeight: FontWeight.w600,

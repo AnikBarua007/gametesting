@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/half_and_half_drawing.dart';
 import '../models/half_and_half_state.dart';
+import 'half_and_half_theme.dart';
 
 class HalfAndHalfCanvas extends StatefulWidget {
   final HalfAndHalfRole localRole;
@@ -174,8 +175,8 @@ class _HalfAndHalfCanvasState extends State<HalfAndHalfCanvas> {
                           const SizedBox(height: 6),
                           Text(
                             isTop ? 'Bottom Half Hidden' : 'Top Half Hidden',
-                            style: const TextStyle(
-                              color: Color(0xffc4b5fd),
+                            style: HalfAndHalfTheme.title(
+                              color: HalfAndHalfTheme.purpleLight,
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
@@ -207,10 +208,10 @@ class _HalfAndHalfCanvasState extends State<HalfAndHalfCanvas> {
                           ),
                           child: Text(
                             isTop ? 'Bottom Edge Guideline' : 'Top Edge Guideline',
-                            style: const TextStyle(
-                              color: Color(0xff583b9b),
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
+                            style: HalfAndHalfTheme.badge(
+                              color: const Color(0xff583b9b),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),

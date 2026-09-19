@@ -938,32 +938,24 @@ class _GameCardState extends State<GameCard> {
 
     return Column(
       children: <Widget>[
-        // Top 63%: Studio Desk Illustration with drawing hands and papers
+        // Top 62%: Studio Drawing Illustration (Two hands drawing cute monster)
+        // Full bleed edge-to-edge with zero side gaps
         Expanded(
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
-              // Desk backdrop
+              // Deep purple backdrop
               Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: <Color>[Color(0xff2b1a45), Color(0xff3f2663)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
+                color: const Color(0xff220e40),
               ),
-              // Crop image to top visual drawing area
-              Positioned.fill(
-                bottom: -16,
-                child: Image.asset(
-                  'assets/images/games/half_half_card.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  errorBuilder: (_, _, _) => _buildFallbackDoodleCanvas(),
-                ),
+              // Full-bleed edge-to-edge illustration
+              Image.asset(
+                'assets/images/games/half_half_card_art.jpg',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                errorBuilder: (_, _, _) => _buildFallbackDoodleCanvas(),
               ),
-              // Subtle top glass sheen
+              // Subtle top sheen
               Positioned(
                 top: 0,
                 left: 0,
@@ -973,7 +965,7 @@ class _GameCardState extends State<GameCard> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: <Color>[
-                        Colors.white.withValues(alpha: 0.15),
+                        Colors.white.withValues(alpha: 0.12),
                         Colors.transparent,
                       ],
                       begin: Alignment.topCenter,
@@ -986,28 +978,36 @@ class _GameCardState extends State<GameCard> {
           ),
         ),
 
-        // Bottom 37%: Modern Native Status Bar
+        // Bottom 38%: Modern Native Status Bar styled to match preview banner
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           decoration: const BoxDecoration(
-            color: Color(0xff4a3c61),
+            gradient: LinearGradient(
+              colors: <Color>[Color(0xff251347), Color(0xff180b2d)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
             border: Border(
-              top: BorderSide(color: Color(0xff675683), width: 1.0),
+              top: BorderSide(color: Color(0xff4c1d95), width: 1.2),
             ),
           ),
           child: Row(
             children: <Widget>[
-              // Squircle Lavender High-Five Icon Container
+              // Squircle High-Five / Artist Icon Container
               Container(
-                width: 30,
-                height: 30,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xff9484b3),
+                  gradient: const LinearGradient(
+                    colors: <Color>[Color(0xff8b5cf6), Color(0xff6d28d9)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(9),
                   boxShadow: <BoxShadow>[
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.25),
-                      blurRadius: 4,
+                      color: const Color(0xff7c3aed).withValues(alpha: 0.4),
+                      blurRadius: 6,
                       offset: const Offset(0, 1),
                     ),
                   ],
@@ -1015,54 +1015,54 @@ class _GameCardState extends State<GameCard> {
                 child: const Icon(
                   Icons.back_hand_rounded,
                   color: Colors.white,
-                  size: 16,
+                  size: 17,
                 ),
               ),
 
               const SizedBox(width: 8),
 
-              // Title & Status
+              // Title & Status with Fredoka font
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    const Text(
+                    Text(
                       'HALF & HALF',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: GoogleFonts.fredoka(
                         color: Colors.white,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.4,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
                         height: 1.0,
                       ),
                     ),
-                    const SizedBox(height: 2.5),
+                    const SizedBox(height: 3),
                     Row(
                       children: <Widget>[
                         Container(
-                          width: 5.5,
-                          height: 5.5,
+                          width: 6,
+                          height: 6,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: const Color(0xff22c55e),
                             boxShadow: <BoxShadow>[
                               BoxShadow(
-                                color: const Color(0xff22c55e).withValues(alpha: 0.8),
+                                color: const Color(0xff22c55e).withValues(alpha: 0.9),
                                 blurRadius: 4,
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 4.5),
                         Text(
                           '$playerText Collaborating',
-                          style: const TextStyle(
-                            color: Color(0xffdcd4eb),
-                            fontSize: 9.8,
-                            fontWeight: FontWeight.w600,
+                          style: GoogleFonts.fredoka(
+                            color: const Color(0xffc4b5fd),
+                            fontSize: 10.2,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/half_and_half_drawing.dart';
 import '../models/half_and_half_prompt.dart';
 import '../models/half_and_half_state.dart';
+import 'half_and_half_theme.dart';
 
 class MergedRevealWidget extends StatefulWidget {
   final HalfAndHalfPrompt prompt;
@@ -42,12 +43,10 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           // Header Title
-          const Text(
+          Text(
             'MERGED RESULT & COMPARISON',
-            style: TextStyle(
-              color: Colors.white,
+            style: HalfAndHalfTheme.title(
               fontSize: 20,
-              fontWeight: FontWeight.w900,
               letterSpacing: 0.8,
             ),
           ),
@@ -60,7 +59,7 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
             decoration: BoxDecoration(
               color: const Color(0xff2e1065),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xffa78bfa), width: 1.2),
+              border: Border.all(color: HalfAndHalfTheme.purpleAccent, width: 1.2),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -69,10 +68,10 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
                 const SizedBox(width: 6),
                 Text(
                   '${widget.state.matchScore}% Match Rating! +${widget.state.matchScore * 2} XP',
-                  style: const TextStyle(
+                  style: HalfAndHalfTheme.badge(
                     color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12.5,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -134,7 +133,7 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
                       ),
                       child: Text(
                         'Top: ${widget.state.playerA.displayName} | Bottom: ${widget.state.playerB.displayName}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 10.5, fontWeight: FontWeight.w600),
+                        style: HalfAndHalfTheme.body(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -183,7 +182,7 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
                                 child: Text(
                                   _showOriginalOverlay ? 'Drawing' : 'Reference',
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
+                                  style: HalfAndHalfTheme.badge(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.w700),
                                 ),
                               ),
                             ),
@@ -224,7 +223,7 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
                         const SizedBox(width: 6),
                         Text(
                           '$count',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                          style: HalfAndHalfTheme.button(fontSize: 13),
                         ),
                       ],
                     ],
@@ -249,19 +248,19 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
               ),
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Color(0xff2e1065),
-                    content: Text('🎉 Masterpiece saved & copied to clipboard!'),
+                  SnackBar(
+                    backgroundColor: const Color(0xff2e1065),
+                    content: Text('🎉 Masterpiece saved & copied to clipboard!', style: HalfAndHalfTheme.body(color: Colors.white, fontSize: 13.5)),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
               },
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Icon(Icons.share_rounded, size: 18),
-                  SizedBox(width: 8),
-                  Text('SHARE', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                  const Icon(Icons.share_rounded, size: 18),
+                  const SizedBox(width: 8),
+                  Text('SHARE', style: HalfAndHalfTheme.button(fontSize: 14.5, letterSpacing: 1.2)),
                 ],
               ),
             ),
@@ -279,7 +278,7 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
                 const SizedBox(width: 6),
                 Text(
                   'Community Likes: ${widget.state.communityLikes}',
-                  style: const TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: HalfAndHalfTheme.body(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -293,7 +292,7 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
               Expanded(
                 child: TextButton(
                   onPressed: widget.onReturnToLobby,
-                  child: const Text('Back to Lobby', style: TextStyle(color: Colors.white60)),
+                  child: Text('Back to Lobby', style: HalfAndHalfTheme.button(fontSize: 14, color: Colors.white60)),
                 ),
               ),
               Expanded(
@@ -305,7 +304,7 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onPressed: widget.onPlayAgain,
-                  child: const Text('Play Again', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text('Play Again', style: HalfAndHalfTheme.button(fontSize: 14)),
                 ),
               ),
             ],

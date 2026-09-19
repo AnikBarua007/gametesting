@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'half_and_half_theme.dart';
 
 class HalfAndHalfToolbar extends StatelessWidget {
   final Color selectedColor;
@@ -47,7 +48,7 @@ class HalfAndHalfToolbar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text('Select Ink Color', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('Select Ink Color', style: HalfAndHalfTheme.title(fontSize: 16)),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -101,7 +102,7 @@ class HalfAndHalfToolbar extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     'Stroke Thickness: ${selectedWidth.toStringAsFixed(1)}px',
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: HalfAndHalfTheme.title(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   Slider(
@@ -211,12 +212,12 @@ class HalfAndHalfToolbar extends StatelessWidget {
               elevation: 4,
             ),
             onPressed: onSubmit,
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text('Done', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                SizedBox(width: 4),
-                Icon(Icons.check_rounded, size: 16),
+                Text('Done', style: HalfAndHalfTheme.button(fontSize: 13.5)),
+                const SizedBox(width: 4),
+                const Icon(Icons.check_rounded, size: 16),
               ],
             ),
           ),
