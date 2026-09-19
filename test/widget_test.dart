@@ -63,4 +63,21 @@ void main() {
     expect(find.text('Inbox'), findsOneWidget);
     expect(find.text('Maya invited you to Sketch Party.'), findsOneWidget);
   });
+
+  testWidgets('selecting Sketch Party on homescreen shows sketchparty_round_bg in banner and card', (tester) async {
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const PlayPalApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('SKETCH\nPARTY'), findsOneWidget);
+
+    await tester.tap(find.text('SKETCH\nPARTY'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PARTY FAVORITE'), findsOneWidget);
+    expect(find.text('LAUNCH GAME'), findsOneWidget);
+  });
 }
