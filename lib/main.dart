@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'features/auth/widgets/auth_gate.dart';
 import 'features/games/hidden_hand/screens/hidden_hand_screen.dart';
 import 'features/games/hidden_hand/widgets/thematic_components.dart';
+import 'features/games/georush/screens/georush_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 
 void main() async {
@@ -90,6 +91,12 @@ class _GameHomeState extends State<GameHome> {
     if (game.id == 'hidden-hand') {
       Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const HiddenHandScreen()),
+      );
+      return;
+    }
+    if (game.id == 'georush') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const GeoRushScreen()),
       );
       return;
     }
