@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'half_and_half_drawing.dart';
 import 'half_and_half_prompt.dart';
 
@@ -65,6 +66,7 @@ class HalfAndHalfState {
   final Map<String, int> reactions;
   final int matchScore; // 0 - 100
   final int communityLikes;
+  final Size canvasSize;
 
   const HalfAndHalfState({
     required this.roomCode,
@@ -85,6 +87,7 @@ class HalfAndHalfState {
     },
     this.matchScore = 85,
     this.communityLikes = 0,
+    this.canvasSize = const Size(360, 480),
   });
 
   HalfAndHalfState copyWith({
@@ -101,6 +104,7 @@ class HalfAndHalfState {
     Map<String, int>? reactions,
     int? matchScore,
     int? communityLikes,
+    Size? canvasSize,
   }) =>
       HalfAndHalfState(
         roomCode: roomCode ?? this.roomCode,
@@ -116,6 +120,7 @@ class HalfAndHalfState {
         reactions: reactions ?? this.reactions,
         matchScore: matchScore ?? this.matchScore,
         communityLikes: communityLikes ?? this.communityLikes,
+        canvasSize: canvasSize ?? this.canvasSize,
       );
 }
 

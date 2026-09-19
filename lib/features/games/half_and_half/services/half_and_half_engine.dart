@@ -46,8 +46,10 @@ class HalfAndHalfEngine {
   }
 
   void setCanvasSize(Size size) {
-    if (size.width > 50 && size.height > 50) {
+    if (size.width > 50 && size.height > 50 && size != _state.canvasSize) {
       _canvasSize = size;
+      _state = _state.copyWith(canvasSize: size);
+      _emit();
     }
   }
 

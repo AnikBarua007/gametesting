@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/half_and_half_drawing.dart';
 import '../models/half_and_half_prompt.dart';
@@ -82,7 +83,7 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
 
           // Main Merged Artwork Card
           Container(
-            height: 340,
+            height: 380,
             width: double.infinity,
             decoration: BoxDecoration(
               color: const Color(0xff140e26),
@@ -115,7 +116,10 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
                     )
                   else
                     CustomPaint(
-                      painter: _CombinedStrokesPainter(strokes: allMergedStrokes),
+                      painter: _CombinedStrokesPainter(
+                        strokes: allMergedStrokes,
+                        sourceCanvasSize: widget.state.canvasSize,
+                      ),
                     ),
 
                   // Player Half Labels on Canvas Border
@@ -315,16 +319,57 @@ class _MergedRevealWidgetState extends State<MergedRevealWidget> {
 
 class _CombinedStrokesPainter extends CustomPainter {
   final List<DrawingStroke> strokes;
-  _CombinedStrokesPainter({required this.strokes});
+  final Size sourceCanvasSize;
+
+  _CombinedStrokesPainter({
+    required this.strokes,
+    required this.sourceCanvasSize,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (strokes.isEmpty) return;
+
+    // Use recorded source canvas size from drawing phase, or fallback to 360x480
+    final double srcW = sourceCanvasSize.width > 50 ? sourceCanvasSize.width : 360.0;
+    final double srcH = sourceCanvasSize.height > 50 ? sourceCanvasSize.height : 480.0;
+
+    // Padding inside the card so the complete drawing fits comfortably with margins
+    const double padding = 18.0;
+    final double availableW = size.width - (padding * 2);
+    final double availableH = size.height - (padding * 2);
+
+    final double scale = math.min(availableW / srcW, availableH / srcH);
+
+    final double offsetX = padding + (availableW - srcW * scale) / 2;
+    final double offsetY = padding + (availableH - srcH * scale) / 2;
+
+    canvas.save();
+    canvas.translate(offsetX, offsetY);
+    canvas.scale(scale);
+
+    // Subtle center connecting seam guide
+    final Paint seamPaint = Paint()
+      ..color = const Color(0xff7052be).withValues(alpha: 0.35)
+      ..strokeWidth = 1.0 / scale
+      ..style = PaintingStyle.stroke;
+    final double seamY = srcH * 0.5;
+    for (double x = 0; x < srcW; x += 14) {
+      canvas.drawLine(Offset(x, seamY), Offset(x + 7, seamY), seamPaint);
+    }
+
     for (final DrawingStroke stroke in strokes) {
-      if (stroke.points.isEmpty) continue;
+      if (stroke.points.isEmpty || stroke.isEraser) continue;
+
+      // Adapt dark ink to luminous lavender on dark card for high contrast
+      Color renderColor = stroke.color;
+      if (renderColor.computeLuminance() < 0.22) {
+        renderColor = const Color(0xffdcd2fc);
+      }
 
       final Paint paint = Paint()
-        ..color = stroke.isEraser ? const Color(0xff140e26) : stroke.color
-        ..strokeWidth = stroke.strokeWidth
+        ..color = renderColor
+        ..strokeWidth = (stroke.strokeWidth / scale).clamp(2.0, 7.0)
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
         ..style = PaintingStyle.stroke;
@@ -339,6 +384,8 @@ class _CombinedStrokesPainter extends CustomPainter {
         canvas.drawPath(path, paint);
       }
     }
+
+    canvas.restore();
   }
 
   @override
