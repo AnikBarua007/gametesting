@@ -66,8 +66,8 @@ class _GameHomeState extends State<GameHome> {
     Game('casefile', 'CASEFILE', 'Solve a fast-moving case with friends.', Icons.manage_search_rounded, Color(0xff1e345d), Color(0xff9b6031), Color(0xff4178d7)),
     Game('sketch-party', 'SKETCH\nPARTY', 'Draw, guess, and race the clock.', Icons.gesture_rounded, Color(0xff08abc4), Color(0xff2176c7), Color(0xfff4d935)),
     Game('georush', 'GEORUSH', 'Explore the world before time runs out.', Icons.public_rounded, Color(0xff08705c), Color(0xff0c3e46), Color(0xffe4be55)),
-    Game('half-half', 'HALF &\nHALF', 'Collaborate to complete the picture.', Icons.back_hand_rounded, Color(0xff4a3272), Color(0xff6b47a4), Color(0xffc4b5fd)),
-    Game('match-hup', 'MATCH\nHUP', 'Find the matching pair first.', Icons.favorite_outline_rounded, Color(0xffb96b71), Color(0xff205966), Color(0xffee9e98)),
+    Game('half-half', 'HALF &\nHALF', 'Collaborate to complete the picture.', Icons.contrast_rounded, Color(0xffb26945), Color(0xff2154aa), Color(0xfff4bd4d)),
+    Game('match-hup', 'MATCH\nHUP', 'Spark chemistry and find your match.', Icons.favorite_outline_rounded, Color(0xffb96b71), Color(0xff205966), Color(0xffee9e98)),
   ];
 
   @override
@@ -348,6 +348,13 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
     final Game? game = widget.game;
     final bool isHiddenHand = game?.id == 'hidden-hand';
     final bool isHalfHalf = game?.id == 'half-half';
+    final String? cardBg = game?.cardBgAsset ?? (isHiddenHand ? 'assets/images/games/hidden_hand_bg.jpg' : null);
+    final String? artwork = game?.artworkAsset ?? (isHiddenHand ? 'assets/images/games/hh_bg.png' : null);
+    final Color accentColor = isHiddenHand
+        ? HiddenHandTheme.gold
+        : (isHalfHalf
+            ? const Color(0xffc4b5fd)
+            : (game?.accent ?? const Color(0xffefc249)));
 
     return Container(
       height: 188,
@@ -359,8 +366,8 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
               ? HiddenHandTheme.gold.withValues(alpha: 0.8)
               : (isHalfHalf
                   ? const Color(0xffc4b5fd).withValues(alpha: 0.8)
-                  : (game?.accent ?? const Color(0xff81438f)).withValues(alpha: 0.6)),
-          width: (isHiddenHand || isHalfHalf) ? 1.8 : 1.2,
+                  : accentColor.withValues(alpha: 0.65)),
+          width: (isHiddenHand || isHalfHalf) ? 1.8 : 1.3,
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
@@ -368,7 +375,7 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                 ? HiddenHandTheme.gold.withValues(alpha: 0.25)
                 : (isHalfHalf
                     ? const Color(0xffa78bfa).withValues(alpha: 0.3)
-                    : Colors.black.withValues(alpha: 0.35)),
+                    : accentColor.withValues(alpha: 0.20)),
             blurRadius: 18,
             spreadRadius: 1,
           ),
@@ -379,63 +386,7 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            // Background Layer
-            if (isHiddenHand) ...<Widget>[
-              // Rich Royal Purple / Amethyst Base Gradient
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: <Color>[
-                      Color(0xff241344),
-                      Color(0xff451a66),
-                      Color(0xff612275),
-                      Color(0xff2b1348),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-              // Thematic Detective Study Texture (Semi-transparent overlay aligned to top lamp)
-              Opacity(
-                opacity: 0.30,
-                child: Image.asset(
-                  'assets/images/games/hidden_hand_bg.jpg',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                ),
-              ),
-              // Warm Candlelight / Desk Lamp Radial Glow on the Right
-              Container(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0.85, -0.45),
-                    radius: 1.1,
-                    colors: <Color>[
-                      HiddenHandTheme.gold.withValues(alpha: 0.36),
-                      HiddenHandTheme.gold.withValues(alpha: 0.10),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-              // High-res Custom Illustrated Artwork on the Right
-              Positioned(
-                right: -2,
-                top: 8,
-                bottom: 8,
-                child: Image.asset(
-                  'assets/images/games/hh_bg.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => Icon(
-                    Icons.front_hand_rounded,
-                    size: 110,
-                    color: HiddenHandTheme.gold.withValues(alpha: 0.22),
-                  ),
-                ),
-              ),
-            ] else if (isHalfHalf) ...<Widget>[
+            if (isHalfHalf) ...<Widget>[
               // Full Background Hand Illustration across the entire preview card
               Positioned.fill(
                 child: Image.asset(
@@ -470,27 +421,95 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                 ),
               ),
             ] else ...<Widget>[
-              // Generic Gradient for Other Games
+              // 1. Rich Base Gradient
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: game == null
-                        ? const <Color>[Color(0xff24184e), Color(0xff522093), Color(0xff177eca)]
-                        : <Color>[game.a, game.b],
+                        ? const <Color>[
+                            Color(0xff241344),
+                            Color(0xff451a66),
+                            Color(0xff612275),
+                            Color(0xff2b1348),
+                          ]
+                        : <Color>[
+                            game.a,
+                            game.b,
+                            Color.lerp(game.a, Colors.black, 0.3)!,
+                          ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                 ),
               ),
-              Positioned(
-                right: 5,
-                top: 3,
-                child: Icon(
-                  game?.icon ?? Icons.sports_esports_rounded,
-                  size: 120,
-                  color: Colors.white24,
+              // 2. Card Background Image
+              if (cardBg != null)
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: isHiddenHand ? 0.30 : 0.45,
+                    child: Image.asset(
+                      cardBg,
+                      fit: BoxFit.cover,
+                      alignment: isHiddenHand ? Alignment.topCenter : Alignment.centerRight,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              // 3. Left-to-right gradient scrim for text readability
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      Colors.black.withValues(alpha: 0.65),
+                      Colors.black.withValues(alpha: 0.28),
+                      Colors.transparent,
+                    ],
+                    stops: const <double>[0.0, 0.55, 1.0],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
                 ),
               ),
+              // 4. Warm Ambient Radial Glow on the Right
+              Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.85, -0.45),
+                    radius: 1.1,
+                    colors: <Color>[
+                      accentColor.withValues(alpha: 0.32),
+                      accentColor.withValues(alpha: 0.08),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+              // 5. Custom Illustrated Artwork on the Right
+              if (artwork != null)
+                Positioned(
+                  right: -2,
+                  top: 8,
+                  bottom: 8,
+                  child: Image.asset(
+                    artwork,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => Icon(
+                      game?.icon ?? Icons.sports_esports_rounded,
+                      size: 110,
+                      color: accentColor.withValues(alpha: 0.22),
+                    ),
+                  ),
+                )
+              else
+                Positioned(
+                  right: 5,
+                  top: 3,
+                  child: Icon(
+                    game?.icon ?? Icons.sports_esports_rounded,
+                    size: 120,
+                    color: Colors.white24,
+                  ),
+                ),
             ],
 
             // Content Foreground
@@ -593,7 +612,7 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                     ),
                   const SizedBox(height: 8),
                   Container(
-                    constraints: BoxConstraints(maxWidth: (isHiddenHand || isHalfHalf) ? 165 : 240),
+                    constraints: BoxConstraints(maxWidth: (artwork != null || isHalfHalf) ? 165 : 240),
                     child: Text(
                       isHalfHalf
                           ? 'Draw your half. Merge and have fun with friends!'
@@ -775,6 +794,9 @@ class _GameCardState extends State<GameCard> {
       );
     }
 
+    final String? cardBg = widget.game.cardBgAsset;
+    final String? artwork = widget.game.artworkAsset;
+
     return InkWell(
       onTap: widget.onTap,
       borderRadius: BorderRadius.circular(14),
@@ -783,14 +805,14 @@ class _GameCardState extends State<GameCard> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: widget.selected
-                ? (isHiddenHand ? HiddenHandTheme.gold : Colors.white)
-                : (isHiddenHand ? HiddenHandTheme.gold.withValues(alpha: 0.6) : widget.game.accent),
+                ? widget.game.accent
+                : widget.game.accent.withValues(alpha: isHiddenHand ? 0.6 : 0.45),
             width: widget.selected ? 2.4 : 1.4,
           ),
           boxShadow: widget.selected
               ? <BoxShadow>[
                   BoxShadow(
-                    color: (isHiddenHand ? HiddenHandTheme.gold : widget.game.accent).withValues(alpha: 0.38),
+                    color: widget.game.accent.withValues(alpha: 0.38),
                     blurRadius: 14,
                     spreadRadius: 1,
                   ),
@@ -802,71 +824,79 @@ class _GameCardState extends State<GameCard> {
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
-              // Background
-              if (isHiddenHand) ...<Widget>[
-                // Rich Royal Purple to Deep Amethyst Gradient
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: <Color>[
-                        Color(0xff2d174d),
-                        Color(0xff4a1b66),
-                        Color(0xff6e2a7a),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+              // 1. Rich Base Gradient
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      widget.game.a,
+                      widget.game.b,
+                      Color.lerp(widget.game.a, Colors.black, 0.3)!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+              // 2. Card Background Image
+              if (cardBg != null)
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: isHiddenHand ? 0.24 : 0.45,
+                    child: Image.asset(
+                      cardBg,
+                      fit: BoxFit.cover,
+                      alignment: isHiddenHand ? Alignment.topCenter : Alignment.centerRight,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
                     ),
                   ),
                 ),
-                // Subtle study texture overlay
-                Opacity(
-                  opacity: 0.24,
-                  child: Image.asset(
-                    'assets/images/games/hidden_hand_bg.jpg',
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              // 3. Left-to-right gradient scrim for text readability
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      Colors.black.withValues(alpha: 0.60),
+                      Colors.black.withValues(alpha: 0.15),
+                      Colors.transparent,
+                    ],
+                    stops: const <double>[0.0, 0.65, 1.0],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
                   ),
                 ),
-                // Warm ambient glow in the top-right
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: const Alignment(0.9, -0.6),
-                      radius: 0.8,
-                      colors: <Color>[
-                        HiddenHandTheme.gold.withValues(alpha: 0.28),
-                        Colors.transparent,
-                      ],
-                    ),
+              ),
+              // 4. Warm ambient glow in the top-right
+              Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.9, -0.6),
+                    radius: 0.85,
+                    colors: <Color>[
+                      widget.game.accent.withValues(alpha: 0.28),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
-                // Custom Illustrated Artwork (Easel & Drawing Hand)
+              ),
+              // 5. Custom Illustrated Artwork on the Right
+              if (artwork != null)
                 Positioned(
                   right: -4,
                   bottom: -2,
                   child: Image.asset(
-                    'assets/images/games/hh_bg.png',
+                    artwork,
                     width: 72,
                     height: 72,
                     fit: BoxFit.contain,
                     errorBuilder: (_, _, _) => Icon(
-                      Icons.front_hand_rounded,
+                      widget.game.icon,
                       size: 53,
-                      color: HiddenHandTheme.gold.withValues(alpha: 0.9),
+                      color: widget.game.accent.withValues(alpha: 0.9),
                     ),
                   ),
-                ),
-              ] else ...<Widget>[
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: <Color>[widget.game.a, widget.game.b],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                ),
+                )
+              else
                 Positioned(
                   right: 8,
                   bottom: 12,
@@ -876,7 +906,6 @@ class _GameCardState extends State<GameCard> {
                     color: widget.game.accent.withValues(alpha: .85),
                   ),
                 ),
-              ],
 
               // Card Text Content
               Padding(
@@ -1126,6 +1155,36 @@ class Game {
   final String id, name, description;
   final IconData icon;
   final Color a, b, accent;
+
+  /// Full-bleed card background wallpaper / texture
+  String? get cardBgAsset {
+    switch (id) {
+      case 'hidden-hand':
+        return 'assets/images/games/hidden_hand_bg.jpg';
+      case 'casefile':
+        return 'assets/images/games/casefile_card_bg.png';
+      case 'sketch-party':
+        return 'assets/images/games/sketch_party_card_bg.png';
+      case 'georush':
+        return 'assets/images/games/georush_card_bg.png';
+      case 'half-half':
+        return 'assets/images/games/halfnhalf_card_bg.png';
+      case 'match-hup':
+        return 'assets/images/games/matchup_card_bg.png';
+      default:
+        return null;
+    }
+  }
+
+  /// Foreground artwork / logo (e.g. easel & cat for Hidden Hand; others will get logo_bg.png later)
+  String? get artworkAsset {
+    switch (id) {
+      case 'hidden-hand':
+        return 'assets/images/games/hh_bg.png';
+      default:
+        return null;
+    }
+  }
 }
 
 class GameApi {
