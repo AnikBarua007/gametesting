@@ -347,6 +347,7 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
   Widget build(BuildContext context) {
     final Game? game = widget.game;
     final bool isHiddenHand = game?.id == 'hidden-hand';
+    final bool isHalfHalf = game?.id == 'half-half';
 
     return Container(
       height: 188,
@@ -356,14 +357,18 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
         border: Border.all(
           color: isHiddenHand
               ? HiddenHandTheme.gold.withValues(alpha: 0.8)
-              : (game?.accent ?? const Color(0xff81438f)).withValues(alpha: 0.6),
-          width: isHiddenHand ? 1.8 : 1.2,
+              : (isHalfHalf
+                  ? const Color(0xffc4b5fd).withValues(alpha: 0.8)
+                  : (game?.accent ?? const Color(0xff81438f)).withValues(alpha: 0.6)),
+          width: (isHiddenHand || isHalfHalf) ? 1.8 : 1.2,
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
             color: isHiddenHand
                 ? HiddenHandTheme.gold.withValues(alpha: 0.25)
-                : Colors.black.withValues(alpha: 0.35),
+                : (isHalfHalf
+                    ? const Color(0xffa78bfa).withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.35)),
             blurRadius: 18,
             spreadRadius: 1,
           ),
@@ -427,6 +432,40 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                     Icons.front_hand_rounded,
                     size: 110,
                     color: HiddenHandTheme.gold.withValues(alpha: 0.22),
+                  ),
+                ),
+              ),
+            ] else if (isHalfHalf) ...<Widget>[
+              // Full Background Hand Illustration across the entire preview card
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/games/half_half_banner.jpg',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  errorBuilder: (_, _, _) => Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: <Color>[Color(0xff1f1236), Color(0xff452273)],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Gradient overlay ensuring text and CTA button are sharp and readable
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: <Color>[
+                        const Color(0xff160b29).withValues(alpha: 0.94),
+                        const Color(0xff160b29).withValues(alpha: 0.82),
+                        const Color(0xff160b29).withValues(alpha: 0.38),
+                        const Color(0xff160b29).withValues(alpha: 0.12),
+                      ],
+                      stops: const <double>[0.0, 0.38, 0.70, 1.0],
+                    ),
                   ),
                 ),
               ),
@@ -503,6 +542,45 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                         ],
                       ),
                     ),
+                  ] else if (isHalfHalf) ...<Widget>[
+                    const Text(
+                      'HALF & HALF',
+                      style: TextStyle(
+                        fontSize: 24,
+                        height: .95,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xff160d26).withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xffc4b5fd).withValues(alpha: 0.6),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(Icons.back_hand_rounded, size: 10, color: Color(0xffc4b5fd)),
+                          SizedBox(width: 4),
+                          Text(
+                            '1.1k COLLABORATING',
+                            style: TextStyle(
+                              color: Color(0xffc4b5fd),
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ] else
                     Text(
                       game?.name ?? 'Bored?\nNot for long.',
@@ -515,12 +593,14 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                     ),
                   const SizedBox(height: 8),
                   Container(
-                    constraints: BoxConstraints(maxWidth: isHiddenHand ? 165 : 240),
+                    constraints: BoxConstraints(maxWidth: (isHiddenHand || isHalfHalf) ? 165 : 240),
                     child: Text(
-                      game?.description ??
-                          (isHiddenHand
-                              ? 'Draw your part. Unmask the fake artist.'
-                              : 'Jump into a 5-minute match\nright now!'),
+                      isHalfHalf
+                          ? 'Draw your half. Merge and have fun with friends!'
+                          : (game?.description ??
+                              (isHiddenHand
+                                  ? 'Draw your part. Unmask the fake artist.'
+                                  : 'Jump into a 5-minute match\nright now!')),
                       style: const TextStyle(
                         color: Color(0xfff1f5f9),
                         fontSize: 12,
@@ -539,13 +619,18 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: <Color>[Color(0xffefc249), Color(0xffd9a527)],
+                          gradient: LinearGradient(
+                            colors: isHalfHalf
+                                ? const <Color>[Color(0xffa78bfa), Color(0xff7c3aed)]
+                                : const <Color>[Color(0xffefc249), Color(0xffd9a527)],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: <BoxShadow>[
                             BoxShadow(
-                              color: const Color(0xffefc249).withValues(alpha: 0.35),
+                              color: (isHalfHalf
+                                      ? const Color(0xff7c3aed)
+                                      : const Color(0xffefc249))
+                                  .withValues(alpha: 0.35),
                               blurRadius: 10,
                               spreadRadius: 1,
                             ),
@@ -553,13 +638,15 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const <Widget>[
-                            Icon(Icons.play_arrow_rounded, size: 16, color: Color(0xff1c1d2a)),
-                            SizedBox(width: 4),
+                          children: <Widget>[
+                            Icon(Icons.play_arrow_rounded,
+                                size: 16,
+                                color: isHalfHalf ? Colors.white : const Color(0xff1c1d2a)),
+                            const SizedBox(width: 4),
                             Text(
                               'QUICK JOIN NOW',
                               style: TextStyle(
-                                color: Color(0xff1c1d2a),
+                                color: isHalfHalf ? Colors.white : const Color(0xff1c1d2a),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: 0.5,
@@ -654,6 +741,39 @@ class _GameCardState extends State<GameCard> {
   @override
   Widget build(BuildContext context) {
     final bool isHiddenHand = widget.game.id == 'hidden-hand';
+    final bool isHalfHalf = widget.game.id == 'half-half';
+
+    if (isHalfHalf) {
+      return InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: widget.selected
+                  ? const Color(0xffa78bfa)
+                  : const Color(0xff58298c).withValues(alpha: 0.7),
+              width: widget.selected ? 2.4 : 1.4,
+            ),
+            boxShadow: widget.selected
+                ? <BoxShadow>[
+                    BoxShadow(
+                      color: const Color(0xff8b5cf6).withValues(alpha: 0.45),
+                      blurRadius: 16,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(13),
+            child: _buildHalfAndHalfModernCard(widget.activePlayers),
+          ),
+        ),
+      );
+    }
 
     return InkWell(
       onTap: widget.onTap,
@@ -807,6 +927,165 @@ class _GameCardState extends State<GameCard> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHalfAndHalfModernCard(int activePlayers) {
+    final String playerText = activePlayers >= 1000
+        ? '${(activePlayers / 1000).toStringAsFixed(1)}k'
+        : '$activePlayers';
+
+    return Column(
+      children: <Widget>[
+        // Top 63%: Studio Desk Illustration with drawing hands and papers
+        Expanded(
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              // Desk backdrop
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[Color(0xff2b1a45), Color(0xff3f2663)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+              // Crop image to top visual drawing area
+              Positioned.fill(
+                bottom: -16,
+                child: Image.asset(
+                  'assets/images/games/half_half_card.png',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (_, _, _) => _buildFallbackDoodleCanvas(),
+                ),
+              ),
+              // Subtle top glass sheen
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 18,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Colors.white.withValues(alpha: 0.15),
+                        Colors.transparent,
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Bottom 37%: Modern Native Status Bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: const BoxDecoration(
+            color: Color(0xff4a3c61),
+            border: Border(
+              top: BorderSide(color: Color(0xff675683), width: 1.0),
+            ),
+          ),
+          child: Row(
+            children: <Widget>[
+              // Squircle Lavender High-Five Icon Container
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: const Color(0xff9484b3),
+                  borderRadius: BorderRadius.circular(9),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.back_hand_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Title & Status
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const Text(
+                      'HALF & HALF',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.4,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 2.5),
+                    Row(
+                      children: <Widget>[
+                        Container(
+                          width: 5.5,
+                          height: 5.5,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xff22c55e),
+                            boxShadow: <BoxShadow>[
+                              BoxShadow(
+                                color: const Color(0xff22c55e).withValues(alpha: 0.8),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$playerText Collaborating',
+                          style: const TextStyle(
+                            color: Color(0xffdcd4eb),
+                            fontSize: 9.8,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFallbackDoodleCanvas() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: <Color>[Color(0xff2b1a45), Color(0xff4a2d75)],
+        ),
+      ),
+      child: const Center(
+        child: Icon(Icons.gesture_rounded, color: Color(0xffc4b5fd), size: 36),
       ),
     );
   }
