@@ -1,7 +1,35 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'core/models/user_profile.dart';
+import 'core/services/auth_service.dart';
+import 'core/services/profile_service.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'features/auth/widgets/auth_gate.dart';
+import 'features/games/hidden_hand/screens/hidden_hand_screen.dart';
+import 'features/games/hidden_hand/widgets/thematic_components.dart';
+import 'features/games/georush/screens/georush_screen.dart';
+import 'features/profile/screens/profile_screen.dart';
 
-void main() => runApp(const PlayPalApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    AuthService.instance = FirebaseAuthService();
+    ProfileService.instance = FirestoreProfileService();
+    debugPrint('=============================================');
+    debugPrint('[PlayPal] FIREBASE CONNECTED SUCCESSFULLY!');
+    debugPrint('=============================================');
+  } catch (e) {
+    debugPrint('=============================================');
+    debugPrint('[PlayPal] WARNING: Firebase init failed ($e). Using in-memory fallback.');
+    debugPrint('=============================================');
+  }
+  runApp(const PlayPalApp());
+}
 
 class PlayPalApp extends StatefulWidget {
   const PlayPalApp({super.key});
@@ -15,7 +43,7 @@ class _PlayPalAppState extends State<PlayPalApp> {
         debugShowCheckedModeBanner: false,
         title: 'PlayPal',
         theme: ThemeData(useMaterial3: true, colorScheme: const ColorScheme.dark(primary: Color(0xffe8bd42))),
-        home: const GameHome(),
+        home: const AuthGate(child: GameHome()),
       );
 }
 
@@ -33,7 +61,7 @@ class _GameHomeState extends State<GameHome> {
   int _selectedTab = 0;
 
   final List<Game> _games = const <Game>[
-    Game('hidden-hand', 'HIDDEN\nHAND', 'Blend in, find your team, and win.', Icons.front_hand_rounded, Color(0xff37235d), Color(0xff81438f), Color(0xffefc249)),
+    Game('hidden-hand', 'HIDDEN\nHAND', 'Draw your part. Unmask the fake artist.', Icons.front_hand_rounded, Color(0xff37235d), Color(0xff81438f), Color(0xffefc249)),
     Game('casefile', 'CASEFILE', 'Solve a fast-moving case with friends.', Icons.manage_search_rounded, Color(0xff1e345d), Color(0xff9b6031), Color(0xff4178d7)),
     Game('sketch-party', 'SKETCH\nPARTY', 'Draw, guess, and race the clock.', Icons.gesture_rounded, Color(0xff08abc4), Color(0xff2176c7), Color(0xfff4d935)),
     Game('georush', 'GEORUSH', 'Explore the world before time runs out.', Icons.public_rounded, Color(0xff08705c), Color(0xff0c3e46), Color(0xffe4be55)),
@@ -60,7 +88,21 @@ class _GameHomeState extends State<GameHome> {
       });
 
   void _launchGame(Game game) {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GameLaunchScreen(game: game)));
+    if (game.id == 'hidden-hand') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const HiddenHandScreen()),
+      );
+      return;
+    }
+    if (game.id == 'georush') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const GeoRushScreen()),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => GameLaunchScreen(game: game)),
+    );
   }
 
   @override
@@ -77,16 +119,20 @@ class _GameHomeState extends State<GameHome> {
               padding: const EdgeInsets.fromLTRB(13, 12, 13, 100),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
                 if (!_searching) ...<Widget>[
-                  GamePreviewBanner(game: _selectedGame),
+                  GamePreviewBanner(
+                    game: _selectedGame,
+                    onQuickJoin: () => _launchGame(_selectedGame ?? _games.first),
+                  ),
                   const SizedBox(height: 22),
                   const Text('Dive into the Action', style: TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 15),
                 ] else
-                  Padding(padding: const EdgeInsets.only(bottom: 16), child: Text('Games matching: ' + _searchController.text, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700))),
+                  Padding(padding: const EdgeInsets.only(bottom: 16), child: Text('Games matching: ${_searchController.text}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700))),
                 FutureBuilder<Map<String, int>>(
                   future: _activePlayers,
+                  initialData: const <String, int>{},
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) return const Center(child: Padding(padding: EdgeInsets.all(36), child: CircularProgressIndicator()));
+                    final Map<String, int> players = snapshot.data ?? const <String, int>{};
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -94,7 +140,7 @@ class _GameHomeState extends State<GameHome> {
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 18, crossAxisSpacing: 16, childAspectRatio: 1.46),
                       itemBuilder: (_, index) {
                         final Game game = shownGames[index];
-                        return GameCard(game: game, activePlayers: snapshot.data![game.id] ?? 0, selected: game.id == _selectedGame?.id, onTap: () => _selectGame(game));
+                        return GameCard(game: game, activePlayers: players[game.id] ?? 0, selected: game.id == _selectedGame?.id, onTap: () => _selectGame(game));
                       },
                     );
                   },
@@ -133,19 +179,109 @@ class _GameHomeState extends State<GameHome> {
     );
   }
 
-  Widget _topBar() => Padding(
-        padding: const EdgeInsets.fromLTRB(13, 8, 13, 8),
-        child: Row(children: <Widget>[
-          Stack(clipBehavior: Clip.none, children: <Widget>[
-            const CircleAvatar(radius: 19, backgroundColor: Color(0xff9485cf), child: Icon(Icons.person, color: Color(0xff382d56), size: 29)),
-            Positioned(right: -1, bottom: -1, child: Container(width: 11, height: 11, decoration: BoxDecoration(color: const Color(0xff48e38e), border: Border.all(color: const Color(0xff1c1d2a), width: 2), shape: BoxShape.circle))),
-          ]),
-          const SizedBox(width: 10),
-          Expanded(child: Container(height: 45, decoration: BoxDecoration(color: const Color(0xff262735), borderRadius: BorderRadius.circular(25), border: Border.all(color: const Color(0xff56566b))), child: TextField(controller: _searchController, onTap: () => setState(() => _searching = true), onChanged: (_) => setState(() {}), style: const TextStyle(color: Colors.white), decoration: InputDecoration(prefixIcon: const Icon(Icons.search, color: Color(0xffd3d1dc)), suffixIcon: _searching ? IconButton(icon: const Icon(Icons.close, color: Colors.white70), onPressed: () => setState(() { _searchController.clear(); _searching = false; })) : null, hintText: 'Search games or friends...', hintStyle: const TextStyle(color: Color(0xffc1bfca), fontSize: 14), border: InputBorder.none)))),
-          const SizedBox(width: 12),
-          IconButton(tooltip: 'Inbox', onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const InboxScreen())), icon: const Icon(Icons.mail_outline_rounded, color: Color(0xffd6d4dd), size: 28)),
-        ]),
+  void _openProfile([UserProfile? profile]) async {
+    final String currentUid = AuthService.instance.currentUser?.uid ?? '';
+    final UserProfile p = profile ??
+        (await ProfileService.instance.getProfile(currentUid)) ??
+        UserProfile(
+          uid: currentUid.isEmpty ? 'guest' : currentUid,
+          displayName: 'Player',
+          isGuest: true,
+          createdAt: DateTime.now(),
+          lastActive: DateTime.now(),
+        );
+
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ProfileScreen(profile: p),
+        ),
       );
+    }
+  }
+
+  Widget _topBar() {
+    final String uid = AuthService.instance.currentUser?.uid ?? '';
+    return StreamBuilder<UserProfile?>(
+      stream: ProfileService.instance.watchProfile(uid),
+      builder: (context, snapshot) {
+        final UserProfile? profile = snapshot.data;
+        final PlayerAvatar avatar = profile?.avatar ?? PlayerAvatar.presets.first;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(13, 8, 13, 8),
+          child: Row(children: <Widget>[
+            GestureDetector(
+              onTap: () => _openProfile(profile),
+              child: Stack(clipBehavior: Clip.none, children: <Widget>[
+                CircleAvatar(
+                  radius: 19,
+                  backgroundColor: avatar.primaryColor,
+                  child: Icon(avatar.icon, color: Colors.white, size: 22),
+                ),
+                Positioned(
+                  right: -1,
+                  bottom: -1,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: const Color(0xff48e38e),
+                      border: Border.all(color: const Color(0xff1c1d2a), width: 2),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: const Color(0xff262735),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(color: const Color(0xff56566b)),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onTap: () => setState(() => _searching = true),
+                  onChanged: (_) => setState(() {}),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search, color: Color(0xffd3d1dc)),
+                    suffixIcon: _searching
+                        ? IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white70),
+                            onPressed: () => setState(() {
+                              _searchController.clear();
+                              _searching = false;
+                            }),
+                          )
+                        : null,
+                    hintText: profile != null
+                        ? 'Hi, ${profile.displayName}! Search games...'
+                        : 'Search games or friends...',
+                    hintStyle: const TextStyle(color: Color(0xffc1bfca), fontSize: 13),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              tooltip: 'Inbox',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const InboxScreen()),
+              ),
+              icon: const Icon(Icons.mail_outline_rounded,
+                  color: Color(0xffd6d4dd), size: 28),
+            ),
+          ]),
+        );
+      },
+    );
+  }
 
   Widget _bottomNavigation() {
     final List<IconData> icons = <IconData>[
@@ -169,7 +305,13 @@ class _GameHomeState extends State<GameHome> {
           children: List<Widget>.generate(
             icons.length,
             (int index) => IconButton(
-              onPressed: () => setState(() => _selectedTab = index),
+              onPressed: () {
+                if (index == 3) {
+                  _openProfile();
+                } else {
+                  setState(() => _selectedTab = index);
+                }
+              },
               icon: Icon(
                 icons[index],
                 size: 28,
@@ -186,8 +328,9 @@ class _GameHomeState extends State<GameHome> {
 }
 
 class GamePreviewBanner extends StatefulWidget {
-  const GamePreviewBanner({super.key, required this.game});
+  const GamePreviewBanner({super.key, required this.game, this.onQuickJoin});
   final Game? game;
+  final VoidCallback? onQuickJoin;
   @override
   State<GamePreviewBanner> createState() => _GamePreviewBannerState();
 }
@@ -196,16 +339,236 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
   @override
   Widget build(BuildContext context) {
     final Game? game = widget.game;
+    final bool isHiddenHand = game?.id == 'hidden-hand';
+
     return Container(
-      height: 177,
+      height: 188,
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16), gradient: LinearGradient(colors: game == null ? const <Color>[Color(0xff24184e), Color(0xff522093), Color(0xff177eca)] : <Color>[game.a, game.b], begin: Alignment.topLeft, end: Alignment.bottomRight)),
-      child: Stack(children: <Widget>[
-        Positioned(right: 5, top: 3, child: Icon(game?.icon ?? Icons.sports_esports_rounded, size: 120, color: Colors.white24)),
-        Text(game?.name ?? 'Bored?\nNot for long.', style: const TextStyle(fontSize: 26, height: .95, color: Colors.white, fontWeight: FontWeight.w900)),
-        Positioned(top: 61, left: 0, right: 85, child: Text(game?.description ?? 'Jump into a 5-minute match\nright now!', style: const TextStyle(color: Color(0xffe6dff4), fontSize: 12))),
-      ]),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isHiddenHand
+              ? HiddenHandTheme.gold.withValues(alpha: 0.8)
+              : (game?.accent ?? const Color(0xff81438f)).withValues(alpha: 0.6),
+          width: isHiddenHand ? 1.8 : 1.2,
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: isHiddenHand
+                ? HiddenHandTheme.gold.withValues(alpha: 0.25)
+                : Colors.black.withValues(alpha: 0.35),
+            blurRadius: 18,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(17),
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            // Background Layer
+            if (isHiddenHand) ...<Widget>[
+              // Rich Royal Purple / Amethyst Base Gradient
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: <Color>[
+                      Color(0xff241344),
+                      Color(0xff451a66),
+                      Color(0xff612275),
+                      Color(0xff2b1348),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+              // Thematic Detective Study Texture (Semi-transparent overlay aligned to top lamp)
+              Opacity(
+                opacity: 0.30,
+                child: Image.asset(
+                  'assets/images/games/hidden_hand_bg.jpg',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+              // Warm Candlelight / Desk Lamp Radial Glow on the Right
+              Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.85, -0.45),
+                    radius: 1.1,
+                    colors: <Color>[
+                      HiddenHandTheme.gold.withValues(alpha: 0.36),
+                      HiddenHandTheme.gold.withValues(alpha: 0.10),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+              // High-res Custom Illustrated Artwork on the Right
+              Positioned(
+                right: -2,
+                top: 8,
+                bottom: 8,
+                child: Image.asset(
+                  'assets/images/games/hh_bg.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => Icon(
+                    Icons.front_hand_rounded,
+                    size: 110,
+                    color: HiddenHandTheme.gold.withValues(alpha: 0.22),
+                  ),
+                ),
+              ),
+            ] else ...<Widget>[
+              // Generic Gradient for Other Games
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: game == null
+                        ? const <Color>[Color(0xff24184e), Color(0xff522093), Color(0xff177eca)]
+                        : <Color>[game.a, game.b],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 5,
+                top: 3,
+                child: Icon(
+                  game?.icon ?? Icons.sports_esports_rounded,
+                  size: 120,
+                  color: Colors.white24,
+                ),
+              ),
+            ],
+
+            // Content Foreground
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  if (isHiddenHand) ...<Widget>[
+                    Image.asset(
+                      'assets/images/games/hidden_hand_logo.png',
+                      height: 26,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => Text(
+                        'HIDDEN HAND',
+                        style: GoogleFonts.cinzelDecorative(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xff121528).withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: HiddenHandTheme.gold.withValues(alpha: 0.6),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const Icon(Icons.auto_awesome_rounded, size: 10, color: HiddenHandTheme.gold),
+                          const SizedBox(width: 4),
+                          Text(
+                            'FEATURED',
+                            style: GoogleFonts.cinzel(
+                              color: HiddenHandTheme.gold,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else
+                    Text(
+                      game?.name ?? 'Bored?\nNot for long.',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        height: .95,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Container(
+                    constraints: BoxConstraints(maxWidth: isHiddenHand ? 165 : 240),
+                    child: Text(
+                      game?.description ??
+                          (isHiddenHand
+                              ? 'Draw your part. Unmask the fake artist.'
+                              : 'Jump into a 5-minute match\nright now!'),
+                      style: const TextStyle(
+                        color: Color(0xfff1f5f9),
+                        fontSize: 12,
+                        height: 1.25,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  // Bottom Action: CTA Button
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.onQuickJoin,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: <Color>[Color(0xffefc249), Color(0xffd9a527)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: <BoxShadow>[
+                            BoxShadow(
+                              color: const Color(0xffefc249).withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const <Widget>[
+                            Icon(Icons.play_arrow_rounded, size: 16, color: Color(0xff1c1d2a)),
+                            SizedBox(width: 4),
+                            Text(
+                              'QUICK JOIN NOW',
+                              style: TextStyle(
+                                color: Color(0xff1c1d2a),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -251,7 +614,7 @@ class _GameLaunchBarState extends State<GameLaunchBar> {
                 borderRadius: BorderRadius.circular(15),
                 border: Border.all(color: widget.game.accent, width: 1.3),
                 boxShadow: <BoxShadow>[
-                  BoxShadow(color: widget.game.accent.withOpacity(.35), blurRadius: 18, spreadRadius: 1),
+                  BoxShadow(color: widget.game.accent.withValues(alpha: .35), blurRadius: 18, spreadRadius: 1),
                 ],
               ),
               child: Row(
@@ -282,17 +645,164 @@ class GameCard extends StatefulWidget {
 
 class _GameCardState extends State<GameCard> {
   @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(13),
-        child: Ink(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(13), gradient: LinearGradient(colors: <Color>[widget.game.a, widget.game.b]), border: Border.all(color: widget.selected ? Colors.white : widget.game.accent, width: widget.selected ? 2.5 : 1.5)),
-          child: Stack(children: <Widget>[
-            Positioned(right: 8, bottom: 12, child: Icon(widget.game.icon, size: 53, color: widget.game.accent.withOpacity(.85))),
-            Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[Text(widget.game.name, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900, height: .92)), const Spacer(), Text(widget.activePlayers.toString() + ' active', style: const TextStyle(color: Color(0xffe6e5eb), fontSize: 12))])),
-          ]),
+  Widget build(BuildContext context) {
+    final bool isHiddenHand = widget.game.id == 'hidden-hand';
+
+    return InkWell(
+      onTap: widget.onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: widget.selected
+                ? (isHiddenHand ? HiddenHandTheme.gold : Colors.white)
+                : (isHiddenHand ? HiddenHandTheme.gold.withValues(alpha: 0.6) : widget.game.accent),
+            width: widget.selected ? 2.4 : 1.4,
+          ),
+          boxShadow: widget.selected
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: (isHiddenHand ? HiddenHandTheme.gold : widget.game.accent).withValues(alpha: 0.38),
+                    blurRadius: 14,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
         ),
-      );
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              // Background
+              if (isHiddenHand) ...<Widget>[
+                // Rich Royal Purple to Deep Amethyst Gradient
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        Color(0xff2d174d),
+                        Color(0xff4a1b66),
+                        Color(0xff6e2a7a),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+                // Subtle study texture overlay
+                Opacity(
+                  opacity: 0.24,
+                  child: Image.asset(
+                    'assets/images/games/hidden_hand_bg.jpg',
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+                // Warm ambient glow in the top-right
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0.9, -0.6),
+                      radius: 0.8,
+                      colors: <Color>[
+                        HiddenHandTheme.gold.withValues(alpha: 0.28),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+                // Custom Illustrated Artwork (Easel & Drawing Hand)
+                Positioned(
+                  right: -4,
+                  bottom: -2,
+                  child: Image.asset(
+                    'assets/images/games/hh_bg.png',
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => Icon(
+                      Icons.front_hand_rounded,
+                      size: 53,
+                      color: HiddenHandTheme.gold.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ),
+              ] else ...<Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: <Color>[widget.game.a, widget.game.b],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 8,
+                  bottom: 12,
+                  child: Icon(
+                    widget.game.icon,
+                    size: 53,
+                    color: widget.game.accent.withValues(alpha: .85),
+                  ),
+                ),
+              ],
+
+              // Card Text Content
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      widget.game.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
+                        height: .92,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: <Widget>[
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xff10b981),
+                            boxShadow: <BoxShadow>[
+                              BoxShadow(
+                                color: const Color(0xff10b981).withValues(alpha: 0.7),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          '${widget.activePlayers} active',
+                          style: const TextStyle(
+                            color: Color(0xffe6e5eb),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class InboxScreen extends StatefulWidget {
@@ -304,7 +814,7 @@ class InboxScreen extends StatefulWidget {
 class _InboxScreenState extends State<InboxScreen> {
   final List<String> _messages = <String>['Maya invited you to Sketch Party.', 'Your Casefile match is ready.', 'Sam reacted to your Hidden Hand win.'];
   @override
-  Widget build(BuildContext context) => Scaffold(backgroundColor: const Color(0xff1c1d2a), appBar: AppBar(title: const Text('Inbox'), backgroundColor: const Color(0xff1c1d2a), foregroundColor: Colors.white), body: ListView.separated(padding: const EdgeInsets.all(16), itemCount: _messages.length, separatorBuilder: (_, __) => const Divider(color: Color(0xff3c3d4b)), itemBuilder: (_, index) => ListTile(leading: const CircleAvatar(backgroundColor: Color(0xff7062b5), child: Icon(Icons.person, color: Colors.white)), title: Text(_messages[index], style: const TextStyle(color: Colors.white)), subtitle: const Text('Just now', style: TextStyle(color: Colors.white54)))));
+  Widget build(BuildContext context) => Scaffold(backgroundColor: const Color(0xff1c1d2a), appBar: AppBar(title: const Text('Inbox'), backgroundColor: const Color(0xff1c1d2a), foregroundColor: Colors.white), body: ListView.separated(padding: const EdgeInsets.all(16), itemCount: _messages.length, separatorBuilder: (_, _) => const Divider(color: Color(0xff3c3d4b)), itemBuilder: (_, index) => ListTile(leading: const CircleAvatar(backgroundColor: Color(0xff7062b5), child: Icon(Icons.person, color: Colors.white)), title: Text(_messages[index], style: const TextStyle(color: Colors.white)), subtitle: const Text('Just now', style: TextStyle(color: Colors.white54)))));
 }
 
 class GameLaunchScreen extends StatefulWidget {
@@ -322,7 +832,7 @@ class _GameLaunchScreenState extends State<GameLaunchScreen> {
     Future<void>.delayed(const Duration(seconds: 1), () { if (mounted) setState(() => _launching = false); });
   }
   @override
-  Widget build(BuildContext context) => Scaffold(backgroundColor: widget.game.a, appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white), body: Center(child: _launching ? const CircularProgressIndicator(color: Colors.white) : Column(mainAxisSize: MainAxisSize.min, children: <Widget>[Icon(widget.game.icon, color: widget.game.accent, size: 90), const SizedBox(height: 18), Text(widget.game.name.replaceAll('\n', ' ') + ' is ready!', style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('Your game session has started.', style: TextStyle(color: Colors.white70))])));
+  Widget build(BuildContext context) => Scaffold(backgroundColor: widget.game.a, appBar: AppBar(backgroundColor: Colors.transparent, foregroundColor: Colors.white), body: Center(child: _launching ? const CircularProgressIndicator(color: Colors.white) : Column(mainAxisSize: MainAxisSize.min, children: <Widget>[Icon(widget.game.icon, color: widget.game.accent, size: 90), const SizedBox(height: 18), Text('${widget.game.name.replaceAll('\n', ' ')} is ready!', style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w800)), const SizedBox(height: 8), const Text('Your game session has started.', style: TextStyle(color: Colors.white70))])));
 }
 
 class Game {
