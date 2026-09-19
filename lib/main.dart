@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -11,6 +12,7 @@ import 'features/games/hidden_hand/screens/hidden_hand_screen.dart';
 import 'features/games/hidden_hand/widgets/thematic_components.dart';
 import 'features/games/georush/screens/georush_screen.dart';
 import 'features/games/half_and_half/screens/half_and_half_screen.dart';
+import 'features/games/sketch_party/screens/sketch_party_menu_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 
 void main() async {
@@ -104,6 +106,12 @@ class _GameHomeState extends State<GameHome> {
     if (game.id == 'half-half') {
       Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const HalfAndHalfScreen()),
+      );
+      return;
+    }
+    if (game.id == 'sketch-party') {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const SketchPartyMenuScreen()),
       );
       return;
     }
@@ -348,6 +356,7 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
     final Game? game = widget.game;
     final bool isHiddenHand = game?.id == 'hidden-hand';
     final bool isHalfHalf = game?.id == 'half-half';
+    final bool isSketchParty = game?.id == 'sketch-party';
     final String? cardBg = game?.cardBgAsset ?? (isHiddenHand ? 'assets/images/games/hidden_hand_bg.jpg' : null);
     final String? artwork = game?.artworkAsset ?? (isHiddenHand ? 'assets/images/games/hh_bg.png' : null);
     final Color accentColor = isHiddenHand
@@ -442,16 +451,24 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                   ),
                 ),
               ),
-              // 2. Card Background Image
+              // 2. Card Background Image (10% Gaussian blur)
               if (cardBg != null)
                 Positioned.fill(
-                  child: Opacity(
-                    opacity: isHiddenHand ? 0.30 : 0.45,
-                    child: Image.asset(
-                      cardBg,
-                      fit: BoxFit.cover,
-                      alignment: isHiddenHand ? Alignment.topCenter : Alignment.centerRight,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  child: ClipRect(
+                    child: ImageFiltered(
+                      imageFilter: ui.ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+                      child: Transform.scale(
+                        scale: 1.05,
+                        child: Opacity(
+                          opacity: isHiddenHand ? 0.30 : 0.45,
+                          child: Image.asset(
+                            cardBg,
+                            fit: BoxFit.cover,
+                            alignment: isHiddenHand ? Alignment.topCenter : Alignment.centerRight,
+                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -484,12 +501,12 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                   ),
                 ),
               ),
-              // 5. Custom Illustrated Artwork on the Right
+              // 5. Custom Illustrated Artwork on the Right (Big View when selected)
               if (artwork != null)
                 Positioned(
-                  right: -2,
-                  top: 8,
-                  bottom: 8,
+                  right: isSketchParty ? 10 : -2,
+                  top: isSketchParty ? 12 : 8,
+                  bottom: isSketchParty ? 12 : 8,
                   child: Image.asset(
                     artwork,
                     fit: BoxFit.contain,
@@ -595,6 +612,48 @@ class _GamePreviewBannerState extends State<GamePreviewBanner> {
                               fontSize: 8.5,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (isSketchParty) ...<Widget>[
+                    Image.asset(
+                      'assets/images/games/sketch_party_logo.png',
+                      height: 28,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => Text(
+                        'SKETCH PARTY',
+                        style: GoogleFonts.fredoka(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xff091426).withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xff08abc4).withValues(alpha: 0.8),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const Icon(Icons.flash_on_rounded, size: 10, color: Color(0xfff8df40)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'PARTY FAVORITE',
+                            style: GoogleFonts.outfit(
+                              color: const Color(0xff08abc4),
+                              fontSize: 8,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.0,
                             ),
                           ),
                         ],
@@ -733,8 +792,20 @@ class _GameLaunchBarState extends State<GameLaunchBar> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  const Icon(Icons.play_circle_outline_rounded, color: Colors.white, size: 18),
-                  const SizedBox(width: 7),
+                  if (widget.game.id == 'sketch-party') ...<Widget>[
+                    ClipOval(
+                      child: Image.asset(
+                        'assets/images/games/sketchparty_round_bg.png',
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                  ] else ...<Widget>[
+                    const Icon(Icons.play_circle_outline_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 7),
+                  ],
                   const Text('LAUNCH GAME', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
                 ],
               ),
@@ -761,6 +832,7 @@ class _GameCardState extends State<GameCard> {
   Widget build(BuildContext context) {
     final bool isHiddenHand = widget.game.id == 'hidden-hand';
     final bool isHalfHalf = widget.game.id == 'half-half';
+    final bool isSketchParty = widget.game.id == 'sketch-party';
 
     if (isHalfHalf) {
       return InkWell(
@@ -793,7 +865,6 @@ class _GameCardState extends State<GameCard> {
         ),
       );
     }
-
     final String? cardBg = widget.game.cardBgAsset;
     final String? artwork = widget.game.artworkAsset;
 
@@ -838,16 +909,24 @@ class _GameCardState extends State<GameCard> {
                   ),
                 ),
               ),
-              // 2. Card Background Image
+              // 2. Card Background Image (10% Gaussian blur)
               if (cardBg != null)
                 Positioned.fill(
-                  child: Opacity(
-                    opacity: isHiddenHand ? 0.24 : 0.45,
-                    child: Image.asset(
-                      cardBg,
-                      fit: BoxFit.cover,
-                      alignment: isHiddenHand ? Alignment.topCenter : Alignment.centerRight,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  child: ClipRect(
+                    child: ImageFiltered(
+                      imageFilter: ui.ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+                      child: Transform.scale(
+                        scale: 1.05,
+                        child: Opacity(
+                          opacity: isHiddenHand ? 0.24 : 0.45,
+                          child: Image.asset(
+                            cardBg,
+                            fit: BoxFit.cover,
+                            alignment: isHiddenHand ? Alignment.topCenter : Alignment.centerRight,
+                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -879,15 +958,15 @@ class _GameCardState extends State<GameCard> {
                   ),
                 ),
               ),
-              // 5. Custom Illustrated Artwork on the Right
+              // 5. Custom Illustrated Artwork on the Right (Small view on homescreen)
               if (artwork != null)
                 Positioned(
-                  right: -4,
-                  bottom: -2,
+                  right: isSketchParty ? 2 : -4,
+                  bottom: isSketchParty ? 2 : -2,
                   child: Image.asset(
                     artwork,
-                    width: 72,
-                    height: 72,
+                    width: isSketchParty ? 66 : 72,
+                    height: isSketchParty ? 66 : 72,
                     fit: BoxFit.contain,
                     errorBuilder: (_, _, _) => Icon(
                       widget.game.icon,
@@ -1176,11 +1255,13 @@ class Game {
     }
   }
 
-  /// Foreground artwork / logo (e.g. easel & cat for Hidden Hand; others will get logo_bg.png later)
+  /// Foreground artwork / logo (e.g. easel & cat for Hidden Hand; circular badge for Sketch Party)
   String? get artworkAsset {
     switch (id) {
       case 'hidden-hand':
         return 'assets/images/games/hh_bg.png';
+      case 'sketch-party':
+        return 'assets/images/games/sketchparty_round_bg.png';
       default:
         return null;
     }
