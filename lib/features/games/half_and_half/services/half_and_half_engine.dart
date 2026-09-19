@@ -25,7 +25,7 @@ class HalfAndHalfEngine {
   void _initDefaultState() {
     final HalfAndHalfPrompt prompt = HalfAndHalfPromptsCatalog.prompts.first;
     _state = HalfAndHalfState(
-      roomCode: 'HALF-${1000 + math.Random().nextInt(9000)}',
+      roomCode: '${100000 + math.Random().nextInt(900000)}',
       phase: HalfAndHalfPhase.lobby,
       prompt: prompt,
       localRole: HalfAndHalfRole.topHalf,
@@ -60,6 +60,7 @@ class HalfAndHalfEngine {
     required HalfAndHalfRole localRole,
     bool isSoloWithBot = true,
     String? opponentName,
+    String? roomCode,
     HalfAndHalfPrompt? selectedPrompt,
   }) {
     _countdownTimer?.cancel();
@@ -69,7 +70,7 @@ class HalfAndHalfEngine {
 
     final HalfAndHalfPlayer playerA = HalfAndHalfPlayer(
       id: isPlayerTop ? localUserId : (isSoloWithBot ? 'bot_top' : 'partner_top'),
-      displayName: isPlayerTop ? localDisplayName : (opponentName ?? 'DrawBuddy'),
+      displayName: isPlayerTop ? localDisplayName : (opponentName ?? 'Friend'),
       avatarId: isPlayerTop ? localAvatarId : 'avatar_ninja',
       role: HalfAndHalfRole.topHalf,
       isBot: !isPlayerTop && isSoloWithBot,
@@ -77,14 +78,14 @@ class HalfAndHalfEngine {
 
     final HalfAndHalfPlayer playerB = HalfAndHalfPlayer(
       id: !isPlayerTop ? localUserId : (isSoloWithBot ? 'bot_bottom' : 'partner_bottom'),
-      displayName: !isPlayerTop ? localDisplayName : (opponentName ?? 'DrawBuddy'),
+      displayName: !isPlayerTop ? localDisplayName : (opponentName ?? 'Friend'),
       avatarId: !isPlayerTop ? localAvatarId : 'avatar_cyber',
       role: HalfAndHalfRole.bottomHalf,
       isBot: isPlayerTop && isSoloWithBot,
     );
 
     _state = _state.copyWith(
-      roomCode: 'ROOM-${1000 + math.Random().nextInt(9000)}',
+      roomCode: roomCode ?? '${100000 + math.Random().nextInt(900000)}',
       phase: HalfAndHalfPhase.memorize,
       prompt: prompt,
       localRole: localRole,

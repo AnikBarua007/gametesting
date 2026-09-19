@@ -67,7 +67,8 @@ class _HalfAndHalfScreenState extends State<HalfAndHalfScreen> {
             localAvatarId: _avatarId,
             localRole: role,
             isSoloWithBot: isSoloWithBot,
-            opponentName: isSoloWithBot ? 'SketchBot' : 'AlexM',
+            opponentName: isSoloWithBot ? 'SketchBot' : (roomCode != null ? 'Friend' : 'AlexM'),
+            roomCode: roomCode,
           );
         },
       ),
@@ -150,12 +151,36 @@ class _HalfAndHalfScreenState extends State<HalfAndHalfScreen> {
                     letterSpacing: 1.0,
                   ),
                 ),
-                Text(
-                  _getPhaseStatusText(state),
-                  style: HalfAndHalfTheme.body(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      _getPhaseStatusText(state),
+                      style: HalfAndHalfTheme.body(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (state.phase != HalfAndHalfPhase.lobby) ...<Widget>[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xff22133f),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: HalfAndHalfTheme.purpleBorderLight.withValues(alpha: 0.5)),
+                        ),
+                        child: Text(
+                          state.roomCode,
+                          style: HalfAndHalfTheme.badge(
+                            fontSize: 9.5,
+                            color: HalfAndHalfTheme.purpleLight,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
